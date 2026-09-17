@@ -21,6 +21,12 @@ Foydalanuvchi — muhandis, elektronika bilan tanish lekin dasturchi emas. Tushu
 - **Brauzer** (WebSerial) — Pico va MES orasidagi shlyuz. QR skaner klaviatura sifatida keladi. Kalibrlash hisobi shu yerda.
 - **MES** — detal ro'yxati, sozlamalar, hodisalar. Sinov serveri `server/mes_server.py` (stdlib, SQLite).
 
+## Joylashuv
+
+- **Ishchi papka: `D:\kromka stansiya OYY`** (2026-09-17 dan). MES server va kiosk shu yerdan ishlaydi (`server\kiosk_ishga_tushirish.bat`). Eski `Downloads\Telegram Desktop\kromka-stansiya` endi ishlatilmaydi.
+- GitHub (PRIVATE): https://github.com/jasper2233/kromka-stansiya-OYY — o'zgarishdan keyin `git add -A; git commit; git push`. `server/mes.db` va `server/image.png` repoga kirmaydi.
+- git va gh admin siz o'rnatilgan: `%LOCALAPPDATA%\Programs\MinGit\cmd`, `%LOCALAPPDATA%\Programs\gh\bin` (foydalanuvchi PATH da).
+
 ## Papkalar
 
 | Papka | Nima |
