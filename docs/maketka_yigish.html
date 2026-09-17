@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maketkada yig'ish — qadam-baqadam</title>
+<style>
+:root{
+  --ink:#1C1917; --mut:#57534E; --dim:#8A857F; --rule:#D6D3D1;
+  --acc:#0F6E56; --warn:#B45309; --dan:#B91C1C; --tint:#F5F4F1;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.doc{max-width:830px;margin:0 auto;padding:40px 36px 80px}
+.head{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:30px}
+.head h1{font-size:24px;font-weight:600;margin:0 0 6px}
+.head p{margin:0;color:var(--mut);font-size:14px}
+h2{font-size:17px;font-weight:600;margin:42px 0 14px;padding-top:14px;
+   border-top:1px solid var(--rule);display:flex;align-items:baseline;gap:12px}
+h2 span{font-family:var(--mono);font-size:13px;color:var(--acc);flex:none}
+h3{font-size:15px;font-weight:600;margin:24px 0 10px}
+p{margin:0 0 12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+   color:var(--mut);padding:0 10px 8px 0;border-bottom:1px solid var(--ink)}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td.m,th.m{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+tr.hl td{background:#FFF7ED}
+figure{margin:20px 0 24px;padding:0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:12.5px;color:var(--mut);margin-top:8px}
+.box{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;margin:18px 0;
+     background:var(--tint);font-size:14px}
+.box.dan{border-color:var(--dan);background:#FEF2F2}
+.box.warn{border-color:var(--warn);background:#FFFBEB}
+.box b{display:block;margin-bottom:5px}
+.box.dan b{color:var(--dan)} .box.warn b{color:var(--warn)}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:16px 0}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 16px 44px}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:28px;height:28px;
+  border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600}
+code{font-family:var(--mono);font-size:13px;background:var(--tint);padding:1px 5px;border-radius:4px}
+@media print{.doc{max-width:none;padding:0}h2{page-break-after:avoid}
+  figure,table,.box,ol.steps>li{page-break-inside:avoid}.pb{page-break-before:always}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="head">
+  <h1>Maketkada yig'ish — qadam-baqadam</h1>
+  <p>EL817 · 4.7 kΩ · Raspberry Pi Pico · 24 V blok pitaniya · fotodatchik</p>
+</div>
+
+<h2><span>1</span> Sizda nima bor</h2>
+
+<table>
+<thead><tr><th>Komponent</th><th>Holati</th></tr></thead>
+<tbody>
+<tr><td><b>EL817</b> optopara, DIP-4</td><td>PC817 ning to'liq analogi — sxemada hech narsa o'zgarmaydi</td></tr>
+<tr><td><b>GM231</b> rezistor to'plami</td><td>Kerakli qator: <code>4.7Ω · 47Ω · 470Ω · <b>4.7KΩ</b> · 47KΩ</code> — to'rtinchi ustundan oling</td></tr>
+<tr><td><b>AL-2402</b> blok pitaniya</td><td>24 V, 2 A. Talab 40 mA — 50 barobar zaxira</td></tr>
+<tr><td><b>Raspberry Pi Pico</b></td><td>Oyoqchalari lehimlanmagan — simni to'g'ridan-to'g'ri teshikka lehimlaysiz</td></tr>
+<tr><td><b>Fotodatchik</b> (NEVEL)</td><td>Simlar sonini sanang: <b>2 sim</b> = nurlatgich, <b>3 sim</b> = qabul qilgich</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+<b>Avval datchikni ajratib oling</b>
+To'siq datchigi ikki qismdan iborat. Uch simli (jigarrang, ko'k, qora) — bu <b>qabul qilgich</b>,
+biz faqat shundan signal olamiz. Ikki simli (jigarrang, ko'k) — <b>nurlatgich</b>,
+unga faqat quvvat beriladi, undan hech qanday signal chiqmaydi.
+</div>
+
+<h2><span>2</span> EL817 oyoqlarini aniqlash</h2>
+
+<p>Bu eng ko'p xato qilinadigan joy. Ikkita usul bor — ikkinchisi 100% ishonchli.</p>
+
+<h3>Usul A — korpusga qarab</h3>
+
+<figure>
+<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>EL817 korpusidagi oyoq raqamlari</title>
+<desc>To'rt oyoqli korpus, chetlangan burchak birinchi oyoqni bildiradi, raqamlash soat strelkasiga teskari boradi.</desc>
+<path d="M320 55 L440 55 L440 145 L320 145 L308 133 L308 67 Z" fill="#2E2E2E" stroke="#141414" stroke-width="1"/>
+<text x="380" y="94" text-anchor="middle" font-size="14" font-weight="600" fill="#E8E8E8" font-family="system-ui">EL817</text>
+<text x="380" y="116" text-anchor="middle" font-size="12" fill="#B0B0B0" font-family="system-ui">C843</text>
+<rect x="288" y="66" width="22" height="10" fill="#B9B9B9"/>
+<rect x="288" y="124" width="22" height="10" fill="#B9B9B9"/>
+<rect x="440" y="66" width="22" height="10" fill="#B9B9B9"/>
+<rect x="440" y="124" width="22" height="10" fill="#B9B9B9"/>
+<line x1="200" y1="71" x2="286" y2="71" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="194" y="75" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">1 — LED anod</text>
+<line x1="200" y1="129" x2="286" y2="129" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="194" y="133" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">2 — LED katod</text>
+<line x1="464" y1="71" x2="550" y2="71" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="558" y="75" font-size="12.5" fill="#1C1917" font-family="system-ui">4 — kollektor</text>
+<line x1="464" y1="129" x2="550" y2="129" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="558" y="133" font-size="12.5" fill="#1C1917" font-family="system-ui">3 — emitter</text>
+<line x1="308" y1="45" x2="290" y2="30" stroke="#B91C1C" stroke-width="1"/>
+<text x="284" y="27" text-anchor="end" font-size="12" fill="#B91C1C" font-family="system-ui">chetlangan burchak</text>
+<text x="380" y="185" text-anchor="middle" font-size="13" fill="#1C1917" font-family="system-ui">Yozuvni to'g'ri o'qiganda chetlangan burchak 1-oyoq tomonda bo'ladi.</text>
+<text x="380" y="207" text-anchor="middle" font-size="13" fill="#1C1917" font-family="system-ui">Raqamlash soat strelkasiga teskari: 1 → 2 → 3 → 4.</text>
+</svg>
+<figcaption>1-rasm. EL817 oyoqlari (yuqoridan ko'rinish). 1 va 4 bir chetda, 2 va 3 ikkinchi chetda.</figcaption>
+</figure>
+
+<h3>Usul B — multimetr bilan (ishonchli)</h3>
+
+<p>Multimetrni <b>diod tekshirish</b> rejimiga qo'ying va oyoq juftlarini sinang:</p>
+
+<table>
+<thead><tr><th>Nima ko'rsatadi</th><th>Xulosa</th></tr></thead>
+<tbody>
+<tr class="hl"><td class="m">~1.0 – 1.2 V (bir yo'nalishda)</td><td>Bu <b>LED tomoni</b>. Qizil shchup turgan oyoq — <b>1-oyoq</b>, qora shchup — <b>2-oyoq</b></td></tr>
+<tr><td class="m">Ikkala yo'nalishda ham uzuq</td><td>Bu tranzistor tomoni — 3 va 4-oyoqlar</td></tr>
+</tbody>
+</table>
+
+<p>LED tomonini topgandan keyin qolgan ikkitasi avtomatik aniqlanadi: <b>1-oyoqning ro'parasi — 4-oyoq</b>,
+<b>2-oyoqning ro'parasi — 3-oyoq</b>.</p>
+
+<h2><span>3</span> Blok pitaniya qutbini aniqlash</h2>
+
+<p>AL-2402 da <code>⊖–C–⊕</code> belgisi bor — bu <b>markaz musbat</b> degani.
+Agar razyomni kesib tashlagan bo'lsangiz, simlarni multimetr bilan tekshiring.</p>
+
+<ol class="steps">
+<li>Blokni rozetkaga ulang.</li>
+<li>Multimetrni <b>DC 200 V</b> rejimiga qo'ying.</li>
+<li>Ikki simga tegizing. Ekranda <b>+24 V</b> chiqsa — qizil shchup turgan sim <b>plyus</b>.
+Agar <b>−24 V</b> chiqsa, simlar teskari: qora shchup turgani plyus.</li>
+<li>Plyus simni qizil izolenta bilan belgilang. Bu keyingi barcha ishda adashmaslikka yordam beradi.</li>
+</ol>
+
+<div class="box dan">
+<b>Qutbni adashtirmang</b>
+Blok pitaniyani teskari ulasangiz EL817 ning LEDi teskari kuchlanish oladi.
+LED ning teskari chidami atigi 5–6 V — 24 V uni bir zumda kuydiradi.
+Shuning uchun ulashdan oldin albatta o'lchang.
+</div>
+
+<h2 class="pb"><span>4</span> Maketkada yig'ish</h2>
+
+<figure>
+<svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Maketkadagi komponentlar joylashuvi</title>
+<desc>Optopara markaziy ariqni kesib o'tib oltinchi va yettinchi ustunlarga o'rnatiladi, rezistor musbat shinadan oltinchi ustunga boradi, datchikning qora simi yettinchi ustunga ulanadi, Pico ga ikkita sim chiqadi.</desc>
+
+<rect x="90" y="45" width="600" height="325" rx="8" fill="#E8E5DE" stroke="#B8B4AC" stroke-width="1"/>
+<line x1="110" y1="64" x2="670" y2="64" stroke="#C8503C" stroke-width="1.5"/>
+<line x1="110" y1="110" x2="670" y2="110" stroke="#3D6E9E" stroke-width="1.5"/>
+<text x="104" y="82" text-anchor="end" font-size="13" font-weight="600" fill="#C8503C" font-family="system-ui">+</text>
+<text x="104" y="100" text-anchor="end" font-size="13" font-weight="600" fill="#3D6E9E" font-family="system-ui">−</text>
+
+<g fill="#B8B4AC">
+<circle cx="130" cy="78" r="3.2"/><circle cx="175" cy="78" r="3.2"/><circle cx="220" cy="78" r="3.2"/><circle cx="265" cy="78" r="3.2"/><circle cx="310" cy="78" r="3.2"/><circle cx="355" cy="78" r="3.2"/><circle cx="400" cy="78" r="3.2"/><circle cx="445" cy="78" r="3.2"/><circle cx="490" cy="78" r="3.2"/><circle cx="535" cy="78" r="3.2"/><circle cx="580" cy="78" r="3.2"/><circle cx="625" cy="78" r="3.2"/>
+<circle cx="130" cy="96" r="3.2"/><circle cx="175" cy="96" r="3.2"/><circle cx="220" cy="96" r="3.2"/><circle cx="265" cy="96" r="3.2"/><circle cx="310" cy="96" r="3.2"/><circle cx="355" cy="96" r="3.2"/><circle cx="400" cy="96" r="3.2"/><circle cx="445" cy="96" r="3.2"/><circle cx="490" cy="96" r="3.2"/><circle cx="535" cy="96" r="3.2"/><circle cx="580" cy="96" r="3.2"/><circle cx="625" cy="96" r="3.2"/>
+<circle cx="130" cy="140" r="3.2"/><circle cx="175" cy="140" r="3.2"/><circle cx="220" cy="140" r="3.2"/><circle cx="265" cy="140" r="3.2"/><circle cx="310" cy="140" r="3.2"/><circle cx="355" cy="140" r="3.2"/><circle cx="400" cy="140" r="3.2"/><circle cx="445" cy="140" r="3.2"/><circle cx="490" cy="140" r="3.2"/><circle cx="535" cy="140" r="3.2"/><circle cx="580" cy="140" r="3.2"/><circle cx="625" cy="140" r="3.2"/>
+<circle cx="130" cy="162" r="3.2"/><circle cx="175" cy="162" r="3.2"/><circle cx="220" cy="162" r="3.2"/><circle cx="265" cy="162" r="3.2"/><circle cx="310" cy="162" r="3.2"/><circle cx="355" cy="162" r="3.2"/><circle cx="400" cy="162" r="3.2"/><circle cx="445" cy="162" r="3.2"/><circle cx="490" cy="162" r="3.2"/><circle cx="535" cy="162" r="3.2"/><circle cx="580" cy="162" r="3.2"/><circle cx="625" cy="162" r="3.2"/>
+<circle cx="130" cy="184" r="3.2"/><circle cx="175" cy="184" r="3.2"/><circle cx="220" cy="184" r="3.2"/><circle cx="265" cy="184" r="3.2"/><circle cx="310" cy="184" r="3.2"/><circle cx="355" cy="184" r="3.2"/><circle cx="400" cy="184" r="3.2"/><circle cx="445" cy="184" r="3.2"/><circle cx="490" cy="184" r="3.2"/><circle cx="535" cy="184" r="3.2"/><circle cx="580" cy="184" r="3.2"/><circle cx="625" cy="184" r="3.2"/>
+<circle cx="130" cy="206" r="3.2"/><circle cx="175" cy="206" r="3.2"/><circle cx="220" cy="206" r="3.2"/><circle cx="265" cy="206" r="3.2"/><circle cx="310" cy="206" r="3.2"/><circle cx="445" cy="206" r="3.2"/><circle cx="490" cy="206" r="3.2"/><circle cx="535" cy="206" r="3.2"/><circle cx="580" cy="206" r="3.2"/><circle cx="625" cy="206" r="3.2"/>
+<circle cx="130" cy="286" r="3.2"/><circle cx="175" cy="286" r="3.2"/><circle cx="220" cy="286" r="3.2"/><circle cx="265" cy="286" r="3.2"/><circle cx="310" cy="286" r="3.2"/><circle cx="445" cy="286" r="3.2"/><circle cx="490" cy="286" r="3.2"/><circle cx="535" cy="286" r="3.2"/><circle cx="580" cy="286" r="3.2"/><circle cx="625" cy="286" r="3.2"/>
+<circle cx="130" cy="308" r="3.2"/><circle cx="175" cy="308" r="3.2"/><circle cx="220" cy="308" r="3.2"/><circle cx="265" cy="308" r="3.2"/><circle cx="310" cy="308" r="3.2"/><circle cx="355" cy="308" r="3.2"/><circle cx="400" cy="308" r="3.2"/><circle cx="445" cy="308" r="3.2"/><circle cx="490" cy="308" r="3.2"/><circle cx="535" cy="308" r="3.2"/><circle cx="580" cy="308" r="3.2"/><circle cx="625" cy="308" r="3.2"/>
+<circle cx="130" cy="330" r="3.2"/><circle cx="175" cy="330" r="3.2"/><circle cx="220" cy="330" r="3.2"/><circle cx="265" cy="330" r="3.2"/><circle cx="310" cy="330" r="3.2"/><circle cx="355" cy="330" r="3.2"/><circle cx="445" cy="330" r="3.2"/><circle cx="490" cy="330" r="3.2"/><circle cx="535" cy="330" r="3.2"/><circle cx="580" cy="330" r="3.2"/><circle cx="625" cy="330" r="3.2"/>
+<circle cx="130" cy="352" r="3.2"/><circle cx="175" cy="352" r="3.2"/><circle cx="220" cy="352" r="3.2"/><circle cx="265" cy="352" r="3.2"/><circle cx="310" cy="352" r="3.2"/><circle cx="355" cy="352" r="3.2"/><circle cx="400" cy="352" r="3.2"/><circle cx="445" cy="352" r="3.2"/><circle cx="490" cy="352" r="3.2"/><circle cx="535" cy="352" r="3.2"/><circle cx="580" cy="352" r="3.2"/><circle cx="625" cy="352" r="3.2"/>
+</g>
+
+<rect x="100" y="230" width="580" height="26" fill="#D8D4CC"/>
+<text x="590" y="247" font-size="11" fill="#8A857F" font-family="system-ui">markaziy ariq</text>
+
+<line x1="355" y1="78" x2="355" y2="92" stroke="#7A7A7A" stroke-width="2"/>
+<rect x="344" y="92" width="22" height="36" rx="3" fill="#D8C9A8" stroke="#A89878" stroke-width="0.8"/>
+<rect x="344" y="98" width="22" height="4" fill="#F2C94C"/><rect x="344" y="105" width="22" height="4" fill="#7B3FA0"/>
+<rect x="344" y="112" width="22" height="4" fill="#1F1F1F"/><rect x="344" y="119" width="22" height="4" fill="#7B4A2A"/>
+<line x1="355" y1="128" x2="355" y2="140" stroke="#7A7A7A" stroke-width="2"/>
+<text x="374" y="114" font-size="12.5" font-weight="500" fill="#B45309" font-family="system-ui">R1 · 4.7 kΩ</text>
+
+<rect x="341" y="216" width="73" height="54" rx="4" fill="#2E2E2E" stroke="#141414" stroke-width="1"/>
+<text x="377" y="245" text-anchor="middle" font-size="12" font-weight="600" fill="#E8E8E8" font-family="system-ui">EL817</text>
+<circle cx="355" cy="206" r="4.5" fill="#B9B9B9" stroke="#141414" stroke-width="0.8"/>
+<circle cx="400" cy="206" r="4.5" fill="#B9B9B9" stroke="#141414" stroke-width="0.8"/>
+<circle cx="355" cy="286" r="4.5" fill="#B9B9B9" stroke="#141414" stroke-width="0.8"/>
+<circle cx="400" cy="286" r="4.5" fill="#B9B9B9" stroke="#141414" stroke-width="0.8"/>
+<text x="334" y="203" text-anchor="end" font-size="12" font-weight="600" fill="#1C1917" font-family="ui-monospace,monospace">1</text>
+<text x="422" y="203" font-size="12" font-weight="600" fill="#1C1917" font-family="ui-monospace,monospace">2</text>
+<text x="334" y="291" text-anchor="end" font-size="12" font-weight="600" fill="#1C1917" font-family="ui-monospace,monospace">4</text>
+<text x="422" y="291" font-size="12" font-weight="600" fill="#1C1917" font-family="ui-monospace,monospace">3</text>
+
+<path d="M50 190 C 140 190, 250 162, 400 162" fill="none" stroke="#1F1F1F" stroke-width="2.5"/>
+<circle cx="400" cy="162" r="4" fill="#1F1F1F"/>
+<text x="50" y="180" font-size="12.5" fill="#1C1917" font-family="system-ui">datchik · qora sim</text>
+
+<path d="M355 308 C 480 308, 580 300, 690 300" fill="none" stroke="#0F6E56" stroke-width="2.5"/>
+<circle cx="355" cy="308" r="4" fill="#0F6E56"/>
+<text x="696" y="304" font-size="12.5" fill="#0F6E56" font-family="system-ui">Pico GP2</text>
+
+<path d="M400 330 C 500 330, 600 345, 690 345" fill="none" stroke="#534AB7" stroke-width="2.5"/>
+<circle cx="400" cy="330" r="4" fill="#534AB7"/>
+<text x="696" y="349" font-size="12.5" fill="#534AB7" font-family="system-ui">Pico GND</text>
+
+<text x="355" y="396" text-anchor="middle" font-size="12" fill="#8A857F" font-family="system-ui">6-ustun</text>
+<text x="400" y="410" text-anchor="middle" font-size="12" fill="#8A857F" font-family="system-ui">7-ustun</text>
+</svg>
+<figcaption>2-rasm. EL817 markaziy ariqni kesib o'tib o'tiradi — shunda chap va o'ng oyoqlari
+bir-biriga ulanib qolmaydi. Bu majburiy shart.</figcaption>
+</figure>
+
+<div class="box dan">
+<b>Optoparani ariq ustiga o'rnating</b>
+Agar EL817 ni ariqning bir tomoniga qo'ysangiz, uning 1 va 4-oyoqlari maketka ichida
+o'zaro ulanib qoladi — galvanik ajratish yo'qoladi va sxema ishlamaydi.
+Chip albatta ariqni kesib o'tishi kerak.
+</div>
+
+<h3>Ulanish jadvali</h3>
+
+<table>
+<thead><tr><th class="m">№</th><th>Nimadan</th><th>Nimaga</th></tr></thead>
+<tbody>
+<tr><td class="m">1</td><td>Blok pitaniya <b>plyus</b></td><td>Maketkaning <code>+</code> shinasi</td></tr>
+<tr><td class="m">2</td><td>Blok pitaniya <b>minus</b></td><td>Maketkaning <code>−</code> shinasi</td></tr>
+<tr><td class="m">3</td><td>Nurlatgich <b>jigarrang</b></td><td><code>+</code> shina</td></tr>
+<tr><td class="m">4</td><td>Nurlatgich <b>ko'k</b></td><td><code>−</code> shina</td></tr>
+<tr><td class="m">5</td><td>Qabul qilgich <b>jigarrang</b></td><td><code>+</code> shina</td></tr>
+<tr><td class="m">6</td><td>Qabul qilgich <b>ko'k</b></td><td><code>−</code> shina</td></tr>
+<tr><td class="m">7</td><td><code>+</code> shina</td><td>R1 (4.7 kΩ) bir uchi</td></tr>
+<tr><td class="m">8</td><td>R1 ikkinchi uchi</td><td><b>6-ustun</b> (EL817 1-oyoq)</td></tr>
+<tr class="hl"><td class="m">9</td><td>Qabul qilgich <b>qora</b></td><td><b>7-ustun</b> (EL817 2-oyoq)</td></tr>
+<tr class="hl"><td class="m">10</td><td><b>6-ustun pastda</b> (4-oyoq)</td><td>Pico <code>GP2</code> — 4-pin</td></tr>
+<tr><td class="m">11</td><td><b>7-ustun pastda</b> (3-oyoq)</td><td>Pico <code>GND</code> — 3-pin</td></tr>
+<tr><td class="m">12</td><td>Pico micro-USB</td><td>Kompyuter</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+<b>Pico ning GND si maketkaning <code>−</code> shinasiga ulanmaydi</b>
+10 va 11-qatorlar Pico ga to'g'ridan-to'g'ri boradi, maketkaning shinasiga emas.
+24 V tomoni va Pico tomoni bir-biriga tegmasligi kerak — optoparaning butun vazifasi shu.
+</div>
+
+<h2><span>5</span> Tekshirish</h2>
+
+<ol class="steps">
+<li><b>Ko'z bilan tekshiring.</b> EL817 ariq ustida turibdimi? R1 <code>+</code> shinadan 6-ustunga boradimi?
+Qora sim 7-ustundami?</li>
+<li><b>Quvvatni bering.</b> Qabul qilgichdagi indikator yonishi kerak. Yonmasa —
+jigarrang va ko'k simlarni tekshiring.</li>
+<li><b>Nurni to'sing.</b> Multimetrni qora sim va <code>−</code> shina orasiga qo'ying:
+nur ochiq — 24 V, nur to'silgan — 0 V ga yaqin. Teskari bo'lsa, datchikdagi
+<code>L/D</code> pereklyuchatelni almashtiring.</li>
+<li><b>Pico ni ulang</b> va nurni to'sing. Pico platasidagi yashil LED yonsin.</li>
+<li><b>Thonny ni oching.</b> Konsolda <code>{"ch":1,"e":0,"d":...}</code> xabarlari chiqsin.</li>
+</ol>
+
+<div class="box">
+<b>Agar 4-qadamda LED yonmasa</b>
+Ehtimol EL817 teskari o'rnatilgan. Uni 180° buring va qayta sinang —
+optopara teskari ulanishdan kuymaydi, shunchaki ishlamaydi.
+</div>
+
+</div>
+</body>
+</html>

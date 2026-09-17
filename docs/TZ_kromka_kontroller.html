@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texnik topshiriq v1.2 — Kromka stansiyasi kontrolleri</title>
+<style>
+:root{--ink:#1C1917;--mut:#57534E;--dim:#8A857F;--rule:#D6D3D1;--acc:#0F6E56;--warn:#B45309;--dan:#B91C1C;--tint:#F5F4F1;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.65}
+.doc{max-width:860px;margin:0 auto;padding:40px 36px 80px}
+.head{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:30px}
+.head .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+.head h1{font-size:24px;font-weight:600;margin:6px 0 4px}
+.head p{margin:0;color:var(--mut);font-size:14px}
+.meta{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+h2{font-size:16.5px;font-weight:600;margin:40px 0 12px;padding-top:14px;border-top:1px solid var(--rule);display:flex;align-items:baseline;gap:12px}
+h2 span{font-family:var(--mono);font-size:12.5px;color:var(--acc);flex:none}
+h3{font-size:14.5px;font-weight:600;margin:22px 0 8px}
+p{margin:0 0 11px} ul,ol{margin:0 0 12px;padding-left:22px} li{margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th{text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+td{padding:7px 10px 7px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td.m,th.m{font-family:var(--mono);font-size:12px;white-space:nowrap}
+code{font-family:var(--mono);font-size:12.5px;background:var(--tint);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.5;margin:10px 0 14px}
+.box{border:1px solid var(--rule);border-radius:8px;padding:13px 15px;margin:16px 0;background:var(--tint);font-size:13.5px}
+.box.dan{border-color:var(--dan);background:#FEF2F2}.box.warn{border-color:var(--warn);background:#FFFBEB}
+.box b{display:block;margin-bottom:4px}.box.dan b{color:var(--dan)}.box.warn b{color:var(--warn)}
+.chg{font-family:var(--mono);font-size:11px;color:#fff;background:var(--acc);padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:middle}
+@media print{.doc{max-width:none;padding:0}h2{page-break-after:avoid}table,.box,pre{page-break-inside:avoid}.pb{page-break-before:always}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="head">
+  <div class="k">Texnik topshiriq</div>
+  <h1>Kromka stansiyasi kontrolleri</h1>
+  <p>Detal uzunligini ikki datchik bilan rezervlangan o'lchash, tezlik va uskuna holatini aniqlash, MES ga uzatish, ovoz va yorug'lik bilan ogohlantirish</p>
+  <div class="meta"><span>Versiya 1.2</span><span>6 sentyabr 2026</span><span>Kontroller: Raspberry Pi Pico</span><span>Oyoqchalar — haqiqiy montaj bo'yicha</span></div>
+</div>
+
+<h2><span>1</span> Maqsad</h2>
+<p>Kontroller (<b>Pico</b>) kromka yopishtirish uskunasidan o'tayotgan har bir detalning uzunligini ikkita mustaqil to'siq datchigi bilan o'lchaydi, uskunaning ish tezligi va holatini aniqlaydi, natijalarni monoblokdagi brauzer orqali MES ga uzatadi, nosozlikda operatorni sirena va lampa bilan ogohlantiradi.</p>
+<p>Tizim datchiklardan biri ifloslanganda yoki ishdan chiqqanda, tarmoq uzilganda, brauzer fonga tushganda ham ishlashda davom etadi.</p>
+
+<h2><span>2</span> Apparat tarkibi</h2>
+<table>
+<thead><tr><th class="m">№</th><th>Komponent</th><th class="m">Soni</th><th>Vazifasi</th></tr></thead>
+<tbody>
+<tr><td class="m">1</td><td>Raspberry Pi Pico (RP2040)</td><td class="m">1</td><td>Kontroller</td></tr>
+<tr><td class="m">2</td><td>Omron E3Z-T61 NPN, to'siq (oraliq 150–200 mm)</td><td class="m">2 kompl.</td><td>Uzunlik — kirish va chiqish</td></tr>
+<tr><td class="m">3</td><td>PC817 optopara</td><td class="m">4</td><td>Datchik 1, datchik 2, tezlik, uskuna holati</td></tr>
+<tr><td class="m">4</td><td>Rezistor 4.7 kΩ, 0.25 W</td><td class="m">4</td><td>Optopara LED toki</td></tr>
+<tr><td class="m">5</td><td>Rele moduli 5 V, 1 kanal, High/Low trigger (Tongling)</td><td class="m">1</td><td>Lampa — istalgan DC yoki AC</td></tr>
+<tr><td class="m">6</td><td>Audio usilitel <b>XH-M564</b> (TPA3116, 2×50 W)</td><td class="m">1</td><td>Sirena</td></tr>
+<tr><td class="m">7</td><td>Dinamik 4–8 Ω, 10–20 W</td><td class="m">1</td><td>Sirena</td></tr>
+<tr><td class="m">8</td><td>Kondensator 100 µF, 35 V</td><td class="m">2</td><td>Datchik quvvat liniyasi va VBUS filtri</td></tr>
+<tr><td class="m">9</td><td>Blok pitaniya 24 V 2 A — AL-2402</td><td class="m">1</td><td>Datchiklar va usilitel</td></tr>
+<tr><td class="m">10</td><td>Rezistor 10 kΩ, 3.3 kΩ; kondensator 10 µF, 100 µF</td><td class="m">1 kompl.</td><td>Audio moslash, VBUS filtri</td></tr>
+</tbody>
+</table>
+
+<h2><span>3</span> Oyoqchalar taqsimoti</h2>
+<table>
+<thead><tr><th class="m">GPIO</th><th class="m">Pin</th><th>Yo'nalish</th><th>Vazifasi</th><th>Faol holat</th></tr></thead>
+<tbody>
+<tr><td class="m">GP1</td><td class="m">2</td><td>Kirish</td><td>Datchik 1 — kirish</td><td>Past = nur to'silgan</td></tr>
+<tr><td class="m">GP5</td><td class="m">7</td><td>Kirish</td><td>Datchik 2 — chiqish</td><td>Past = nur to'silgan</td></tr>
+<tr><td class="m">GP9</td><td class="m">12</td><td>Kirish</td><td>RUN — uskuna ishlayapti, 10 m/min</td><td>Past = ishlayapti</td></tr>
+<tr><td class="m">GP13</td><td class="m">17</td><td>Kirish</td><td>18 m/min rejimi — HMI → chastotnik</td><td>Past = 18 m/min</td></tr>
+<tr><td class="m">GP0</td><td class="m">1</td><td>Chiqish</td><td>Rele — lampa</td><td>Past = rele tortadi</td></tr>
+<tr><td class="m">GP16</td><td class="m">21</td><td>Chiqish PWM</td><td>Audio → R2/R3/C1 → usilitel NL</td><td>PWM 800–1200 Hz</td></tr>
+<tr><td class="m">GND</td><td class="m">3, 38</td><td>—</td><td>Pico yeri</td><td>—</td></tr>
+<tr><td class="m">VBUS</td><td class="m">40</td><td>—</td><td>5 V → rele moduli DC+</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h2><span>4</span> Kirishlar</h2>
+
+<h3>4.1 Datchik 1 va datchik 2</h3>
+<p>Bir xil sxema: <code>PSU +24 V → 4.7 kΩ → PC817 1-oyoq</code>, <code>2-oyoq → datchik qora sim</code>, <code>4-oyoq → GP</code>, <code>3-oyoq → Pico GND</code>. Datchik <code>L/D = D</code>.</p>
+
+<h3>4.2 Tezlik signali</h3>
+<p>HMI paneldan chastotnikka kiradigan buyruq liniyasidan olinadi. 18 m/min rejimida <b>+24 V DC</b> paydo bo'ladi. Ulanish: <code>+24 V → 4.7 kΩ → PC817 1-oyoq</code>, <code>2-oyoq → uskunaning o'sha zanjiridagi 0 V</code>, <code>4-oyoq → GP13</code>, <code>3-oyoq → Pico GND</code>.</p>
+<div class="box warn"><b>Uskunaning 0 V i — alohida yer</b>
+Bu optoparaning 2-oyog'i <b>uskunaning</b> 0 V iga ulanadi, PSU-1 ning 0 V iga emas. Uskuna va PSU-1 yerlarini bir-biriga ulamang — ular optopara orqali allaqachon ajratilgan.</div>
+
+<h3>4.3 Uskuna holati <span class="chg">yangi</span></h3>
+<p>Chastotnikning <code>RUN</code> rele chiqishidan yoki uskunaning "ishlayapti" indikator lampasidan (24 V) olinadi. Sxema 4.2 bilan bir xil, chiqishi <code>GP9</code>. Holat o'zgarganda <code>{"ev":"uskuna","holat":1}</code> yuboriladi. MES bunga asoslanib yuklanish foizi va bo'sh turish vaqtini hisoblaydi.</p>
+<p>Detal kirishidan aniqlash qo'llanilmaydi: "o'chiq" va "yoqiq, detal yo'q" holatlarini ajratib bo'lmaydi.</p>
+
+<h2 class="pb"><span>5</span> O'lchash mantiqi</h2>
+
+<h3>5.1 Asos</h3>
+<p>Ikki datchik detalni <b>mustaqil</b> o'lchaydi. Tezlik har bir detal uchun datchiklar orasidagi o'tish vaqtidan hisoblanadi. Nominal tezlik (10/18) faqat <b>metama'lumot</b> sifatida yoziladi va bitta datchik ishlamay qolganda zaxira sifatida ishlatiladi.</p>
+
+<h3>5.2 Detal o'tish jarayoni</h3>
+<table>
+<thead><tr><th>Hodisa</th><th>O'lchanadi</th></tr></thead>
+<tbody>
+<tr><td>Detal datchik 1 ni to'sadi</td><td><code>t1_boshl</code>; <code>GP13</code> o'qiladi → nominal tezlik S</td></tr>
+<tr><td>Detal datchik 2 ni to'sadi</td><td><code>Δt = t2_boshl − t1_boshl</code> — <b>ishlov vaqti</b>, MES ga yoziladi</td></tr>
+<tr><td>Detal datchik 1 dan chiqadi</td><td><code>t1</code> — davomiylik</td></tr>
+<tr><td>Detal datchik 2 dan chiqadi</td><td><code>t2</code> — davomiylik</td></tr>
+</tbody>
+</table>
+<p>Detallar orasida kamida 50 sm masofa uskuna tomonidan kafolatlanadi — juftlash tartib bo'yicha, murakkab mantiq kerak emas.</p>
+
+<h3>5.3 Hisob</h3>
+<pre>Δt bor (ikkala datchik ishladi):
+    v  = D_eff / Δt                    ← shu detalning haqiqiy tezligi
+    L1 = v × (t1 − k)
+    L2 = v × (t2 − k)
+
+Δt yo'q (bitta datchik ishlamadi):
+    v  = V_eff[S]                      ← kalibrlangan zaxira tezlik
+    L  = v × (t − k)
+
+Tekshiruv:  |v − V_eff[S]| / V_eff[S] > TOL_TEZLIK  →  tezlik_nomuvofiq</pre>
+<p><code>D_eff</code>, <code>V_eff[10]</code>, <code>V_eff[18]</code>, <code>k</code> — kalibrlashdan olinadi (5.5).</p>
+
+<h3>5.4 Qaror</h3>
+<table>
+<thead><tr><th>Holat</th><th>Natija</th><th class="m">Kod</th><th>Shubhali</th></tr></thead>
+<tbody>
+<tr><td>Ikkalasi bor, |L1−L2| ≤ TOL_DATCHIK</td><td>(L1+L2)/2</td><td class="m">OK</td><td>—</td></tr>
+<tr><td>Ikkalasi bor, |L1−L2| &gt; TOL_DATCHIK</td><td>min(L1,L2)</td><td class="m">FARQ</td><td>uzunroq bergani</td></tr>
+<tr><td>Faqat datchik 1</td><td>L1</td><td class="m">FAQAT1</td><td>2</td></tr>
+<tr><td>Faqat datchik 2</td><td>L2</td><td class="m">FAQAT2</td><td>1</td></tr>
+</tbody>
+</table>
+<p>Iflos linza davomiylikni uzaytiradi, shuning uchun uzunroq natija bergan datchik shubhali.</p>
+
+<h3>5.5 Kalibrlash <span class="chg">yangi</span></h3>
+<p>MES tablosining "Sozlamalar" bo'limida bajariladi:</p>
+<ol>
+<li>Etalon detal uzunligi ruletka bilan o'lchanadi va <code>L_REF</code> maydoniga kiritiladi.</li>
+<li>"Kalibrlash" rejimi yoqiladi.</li>
+<li>Etalon detal uskunadan o'tkaziladi. Tizim <code>GP13</code> dan tezlik rejimini <b>o'zi</b> aniqlaydi va <code>t1, t2, Δt, S</code> ni yozadi.</li>
+<li>Tezlik HMI dan almashtiriladi, o'sha detal yana o'tkaziladi — ikkinchi rejim ham yoziladi.</li>
+<li>Xohlasangiz, boshqa uzunlikdagi etalon bilan takrorlanadi — bu <code>k</code> aniqligini oshiradi.</li>
+<li>"Saqlash" — tizim hisoblaydi:</li>
+</ol>
+<pre>t_ort     = (t1 + t2) / 2
+D_eff     = L_REF × Δt / t_ort              ← barcha o'tkazishlar o'rtachasi
+V_eff[S]  = L_REF / t_ort                   ← har bir S uchun alohida
+k         = ikki xil uzunlik bo'lsa regressiya, aks holda 0</pre>
+<p>Bitta etalon minimal talab. Ikki xil uzunlik (masalan 300 mm va 2750 mm) — 1 mm dan yaxshi aniqlik uchun zarur.</p>
+
+<h3>5.6 Aniqlik va dopusk</h3>
+<div class="box warn"><b>0.5 mm — maqsad, kafolat emas</b>
+Dopusk MES sozlamasida o'zgartiriladi. Fizik chegara: 2750 mm detalda 0.5 mm = 0.018%, ya'ni tezlik shu darajada barqaror bo'lishi kerak. Ikki datchikli tezlik o'lchash va ikki nuqtali kalibrlash ±1 mm atrofini beradi. Dopuskni <b>3 mm dan boshlang</b>; tizim jurnalda haqiqiy tarqoqlikni ko'rsatadi — 100 detaldan keyin shunga qarab qisqartiring. 0.5 mm ga darrov qo'yilsa, soxta avariyalar bo'ladi.</div>
+
+<h2><span>6</span> Datchik nazorati</h2>
+<table>
+<thead><tr><th class="m">Sabab</th><th>Shart</th><th>Harakat</th></tr></thead>
+<tbody>
+<tr><td class="m">javob_yoq</td><td>3 ketma-ket detalda ishlamadi</td><td>Ogoh + AVARIYA</td></tr>
+<tr><td class="m">yopishib_qolgan</td><td>30 s dan uzoq yopiq</td><td>Ogoh + AVARIYA, datchik vaqtincha chiqariladi</td></tr>
+<tr><td class="m">iflos</td><td>5 ketma-ket uzunroq natija</td><td>Ogoh — linzani tozalang</td></tr>
+<tr><td class="m">tezlik_nomuvofiq</td><td>O'lchangan tezlik nominal bilan 20% farq</td><td>Ogoh + AVARIYA — tezlik simini tekshiring</td></tr>
+</tbody>
+</table>
+
+<h2><span>7</span> Ogohlantirish rejimlari</h2>
+<h3>7.1 TASDIQ — QR o'qildi</h3>
+<p>Brauzer <code>QR</code> yuboradi. Pico: <b>ikki qisqa signal</b> (150 ms tovush + lampa, 150 ms pauza, 150 ms tovush + lampa). Avtomatik tugaydi.</p>
+<h3>7.2 AVARIYA</h3>
+<p><b>Sabablar:</b> Pico — <code>FARQ, FAQAT1, FAQAT2, yopishib_qolgan, javob_yoq, tezlik_nomuvofiq</code>; brauzer — <code>|L − L_kutilgan| &gt; TOL_DETAL</code> → <code>ALARM</code>.</p>
+<p><b>Ko'rinishi:</b> lampa va sirena <b>1 s yonadi, 1 s o'chadi</b>, takror. Sirena ikki tonli (800/1200 Hz).</p>
+<p><b>Davomiyligi:</b> operator tablodagi "O'chirish" tugmasini bosguncha (<code>STOP</code>). Keyingi detal o'tsa ham to'xtamaydi. Uskuna to'xtatilmaydi.</p>
+
+<h2 class="pb"><span>8</span> Aloqa protokoli</h2>
+<p>USB CDC, 115200. Har xabar bitta qator.</p>
+<h3>8.1 Pico → brauzer</h3>
+<pre>{"ev":"boot"}
+{"ev":"tezlik","v":18}
+{"ev":"uskuna","holat":1}
+{"ev":"olchov","n":42,"L":2474.5,"kod":"OK","shubha":0,
+  "L1":2473.1,"L2":2475.9,"d1":8243700,"d2":8253000,
+  "v_olch":17.96,"v_nom":18,"ish_ms":6650,"farq":2.8}
+{"ev":"kalib","S":18,"t1":8243700,"t2":8253000,"dt":6650000}
+{"ev":"ogoh","ch":2,"sabab":"javob_yoq"}
+{"ev":"holat","alarm":1}</pre>
+<table>
+<thead><tr><th class="m">Maydon</th><th>Ma'nosi</th></tr></thead>
+<tbody>
+<tr><td class="m">v_olch</td><td>Shu detal uchun o'lchangan tezlik, m/min</td></tr>
+<tr><td class="m">v_nom</td><td>Nominal tezlik GP13 dan: 10 yoki 18</td></tr>
+<tr><td class="m">ish_ms</td><td>Ishlov vaqti — datchik 1 dan datchik 2 gacha, ms</td></tr>
+<tr><td class="m">d1, d2</td><td>Xom davomiylik, µs — qayta hisoblash uchun saqlanadi</td></tr>
+</tbody>
+</table>
+<h3>8.2 Brauzer → Pico</h3>
+<table>
+<thead><tr><th class="m">Buyruq</th><th>Harakat</th></tr></thead>
+<tbody>
+<tr><td class="m">QR</td><td>TASDIQ — ikki qisqa signal</td></tr>
+<tr><td class="m">ALARM</td><td>AVARIYA boshlash</td></tr>
+<tr><td class="m">STOP</td><td>AVARIYA to'xtatish</td></tr>
+<tr><td class="m">KALIB 1</td><td>Kalibrlash rejimini yoqish — keyingi o'tkazishlar <code>ev:kalib</code> bilan qaytadi</td></tr>
+<tr><td class="m">KALIB 0</td><td>Kalibrlash rejimini o'chirish</td></tr>
+<tr><td class="m">SET D_eff=2003.4 V10=9.87 V18=17.92 K=1.2</td><td>Kalibrlash natijasini Pico ga yozish</td></tr>
+<tr><td class="m">TEST</td><td>Lampa va sirena 1 s</td></tr>
+<tr><td class="m">HOLAT</td><td>Joriy holatni qaytarish</td></tr>
+</tbody>
+</table>
+<p>Kalibrlash hisobi brauzerda bajariladi, natija <code>SET</code> bilan Pico ga yuboriladi va MES da saqlanadi. Pico qayta yuklansa, brauzer ulanganda <code>SET</code> ni qayta yuboradi.</p>
+
+<h2><span>9</span> Chiqishlar</h2>
+<h3>9.1 Rele moduli</h3>
+<pre>DC+ → Pico VBUS (40)      DC− → Pico GND (38)      IN → GP0
+Sakratkich → Low.   VBUS–GND orasiga 100 µF.
+Lampa: ~220 V faza (yoki +24 V) → COM,  NO → lampa,  lampa → nol (yoki 0 V)</pre>
+
+<h3>9.2 Usilitel XH-M564</h3>
+<table>
+<thead><tr><th class="m">Klemma</th><th>Ulanish</th></tr></thead>
+<tbody>
+<tr><td class="m">VCC</td><td>PSU-1 +24 V</td></tr>
+<tr><td class="m">GND (quvvat)</td><td>PSU-1 0 V</td></tr>
+<tr><td class="m">NL</td><td>Audio kirish ← Pico PWM (bo'luvchi va kondensator orqali)</td></tr>
+<tr><td class="m">GND (signal)</td><td>Pico GND</td></tr>
+<tr><td class="m">SPL+ / SPL−</td><td>Dinamik</td></tr>
+<tr><td class="m">NR, SPR±</td><td>Ishlatilmaydi</td></tr>
+<tr><td class="m">OS</td><td>Ulanmaydi (ehtimol mute/shutdown)</td></tr>
+</tbody>
+</table>
+<pre>Pico GP16 (PWM) → 10 kΩ → [nuqta] → 3.3 kΩ → Pico GND
+                            [nuqta] → 10 µF → usilitel NL
+Usilitel signal GND → Pico GND</pre>
+<p>Bo'luvchi 3.3 V PWM ni ~0.8 V liniya darajasiga tushiradi, kondensator doimiy tokni to'sadi. Tovush regulyatori dastlab 30%.</p>
+
+<h2><span>10</span> Quvvat va ajratish — bitta PSU <span class="chg">yangilandi</span></h2>
+<table>
+<thead><tr><th>Zona</th><th>Nimalar</th><th>Yeri</th></tr></thead>
+<tbody>
+<tr><td><b>PSU-1</b> — AL-2402, 24 V + <b>USB 5 V</b></td><td>Pico, rele moduli, datchik 1, datchik 2, R1×2, usilitel, PWM zanjiri</td><td><b>Umumiy:</b> PSU-1 0 V = Pico GND</td></tr>
+<tr><td><b>Uskuna</b> — 24 V boshqaruv</td><td>Tezlik va RUN signallari, R1×2</td><td><b>Alohida:</b> uskuna 0 V</td></tr>
+</tbody>
+</table>
+<p>PSU-1 alohida, hech narsaga bog'lanmagan adapter bo'lgani uchun uning 0 V ini Pico GND bilan birlashtirish xavfsiz. Datchik optoparalari galvanik ajratish emas, 24 V → 3.3 V daraja o'zgartirish vazifasini bajaradi.</p>
+<div class="box dan"><b>Yagona ajratish chegarasi — uskuna zanjiri</b>
+Tezlik va RUN optoparalarining 2-oyoqlari <b>uskunaning 0 V iga</b> ulanadi. Uskuna 0 V i Pico GND ga yoki PSU-1 ga <b>hech qachon</b> ulanmaydi. Tekshiruv — multimetr: <code>Uskuna 0V ↔ Pico GND</code> cheksiz.</div>
+<div class="box warn"><b>Shart</b>
+Datchiklar faqat PSU-1 dan oziqlanadi. Uskuna shchitidagi 24 V dan olinmaydi — aks holda uskuna yeri Pico ga o'tib, ajratish yo'qoladi.</div>
+<p>Iste'mol: datchiklar 40 mA + usilitel sirena paytida ~300 mA — AL-2402 ning 2 A si yetarli. Datchik quvvat liniyasiga, datchiklarga yaqin joyda 100 µF kondensator — usilitel shovqini filtri.</p>
+
+<h2><span>11</span> Sozlanadigan parametrlar</h2>
+<p>MES tablosining "Sozlamalar" bo'limida; Pico ga <code>SET</code> orqali uzatiladi.</p>
+<table>
+<thead><tr><th class="m">Parametr</th><th class="m">Standart</th><th>Ma'nosi</th></tr></thead>
+<tbody>
+<tr><td class="m">V_NOM_PAST</td><td class="m">10</td><td>Nominal past tezlik, m/min</td></tr>
+<tr><td class="m">V_NOM_YUQORI</td><td class="m">18</td><td>Nominal yuqori tezlik, m/min</td></tr>
+<tr><td class="m">L_REF</td><td class="m">—</td><td>Etalon detal uzunligi, mm (kalibrlash uchun)</td></tr>
+<tr><td class="m">D_EFF</td><td class="m">kalibrlanadi</td><td>Datchiklar orasidagi samarali masofa, mm</td></tr>
+<tr><td class="m">V_EFF_10, V_EFF_18</td><td class="m">kalibrlanadi</td><td>Zaxira tezliklar, m/min</td></tr>
+<tr><td class="m">K_MS</td><td class="m">0</td><td>Kechikish tuzatmasi, ms</td></tr>
+<tr><td class="m">TOL_DETAL</td><td class="m">3.0 → 0.5</td><td>Kutilgan o'lchamdan farq, mm — tarqoqlikka qarab qisqartiriladi</td></tr>
+<tr><td class="m">TOL_DATCHIK</td><td class="m">3.0</td><td>Ikki datchik farqi, mm</td></tr>
+<tr><td class="m">TOL_TEZLIK</td><td class="m">20</td><td>Tezlik nomuvofiqligi, %</td></tr>
+<tr><td class="m">MIN_MS</td><td class="m">50</td><td>Shovqin filtri</td></tr>
+<tr><td class="m">STUCK_S</td><td class="m">30</td><td>Yopishib qolish, s</td></tr>
+<tr><td class="m">XATO_N / IFLOS_N</td><td class="m">3 / 5</td><td>Ketma-ketliklar</td></tr>
+</tbody>
+</table>
+
+<h2><span>12</span> Qabul qilingan qarorlar</h2>
+<ul>
+<li>Usilitel — XH-M564 (rasmda tasdiqlandi).</li>
+<li>Tezlik signali — HMI → chastotnik liniyasi, +24 V, uskunaning o'z 0 V i bilan.</li>
+<li>Lampa — bitta kanalli rele, NO/NC, istalgan DC/AC.</li>
+<li>Dopusk 0.5 mm — sozlama; boshlang'ich 3 mm, ma'lumot asosida qisqartiriladi.</li>
+<li>Tezliklar 10/18 — sozlama; kalibrlash etalon detal bilan, ikki rejimda avtomatik.</li>
+<li>Detallar orasida ≥50 sm — uskuna kafolatlaydi; yopishtirilgan detallar bitta hisoblanadi.</li>
+<li>QR — ikki qisqa signal; avariya — 1 s / 1 s; uskuna to'xtatilmaydi.</li>
+<li>Datchiklar orasidagi o'tish vaqti — "ishlov vaqti" sifatida MES ga yoziladi.</li>
+<li>Uskuna holati — alohida GP9, chastotnik RUN chiqishidan.</li>
+<li>Bitta PSU — AL-2402 hamma narsani oziqlantiradi, 0 V i Pico GND bilan umumiy. Ajratish faqat uskuna signallari uchun saqlanadi.</li>
+</ul>
+
+</div>
+</body>
+</html>

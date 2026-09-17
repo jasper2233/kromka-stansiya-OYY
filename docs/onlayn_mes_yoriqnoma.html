@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onlayn MES — stansiyani avtomatik sozlash</title>
+<style>
+:root{--ink:#1C1917;--mut:#57534E;--dim:#8A857F;--rule:#D6D3D1;--acc:#0F6E56;--warn:#B45309;--dan:#B91C1C;--tint:#F5F4F1;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.65}
+.doc{max-width:860px;margin:0 auto;padding:40px 36px 80px}
+.head{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:28px}
+.head .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+.head h1{font-size:24px;font-weight:600;margin:6px 0 4px}.head p{margin:0;color:var(--mut);font-size:14px}
+h2{font-size:16.5px;font-weight:600;margin:38px 0 12px;padding-top:14px;border-top:1px solid var(--rule);display:flex;align-items:baseline;gap:12px}
+h2 span{font-family:var(--mono);font-size:12.5px;color:var(--acc);flex:none}
+h3{font-size:14px;font-weight:600;margin:20px 0 8px}p{margin:0 0 11px}ul,ol{margin:0 0 12px;padding-left:22px}li{margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th{text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+td{padding:7px 10px 7px 0;border-bottom:1px solid var(--rule);vertical-align:top}td.m{font-family:var(--mono);font-size:12px;white-space:nowrap}
+code{font-family:var(--mono);font-size:12.5px;background:var(--tint);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.5;margin:10px 0 14px;white-space:pre-wrap;word-break:break-all}
+.box{border:1px solid var(--rule);border-radius:8px;padding:13px 15px;margin:16px 0;background:var(--tint);font-size:13.5px}
+.box.dan{border-color:var(--dan);background:#FEF2F2}.box.warn{border-color:var(--warn);background:#FFFBEB}
+.box b{display:block;margin-bottom:4px}.box.dan b{color:var(--dan)}.box.warn b{color:var(--warn)}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 14px 42px}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
+@media print{.doc{max-width:none;padding:0}h2{page-break-after:avoid}table,.box,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="head">
+  <div class="k">Joriy qilish yo'riqnomasi</div>
+  <h1>Onlayn MES — stansiyani avtomatik sozlash</h1>
+  <p>Monoblok yoqilganda o'zi ochiladi, Pico ga o'zi ulanadi, sozlamalarni MES dan o'zi oladi. Operator hech narsa bosmaydi.</p>
+</div>
+
+<h2><span>1</span> Qanday ishlaydi</h2>
+
+<pre>Monoblok yoqiladi
+  → Windows avtomatik login
+  → Chrome kiosk rejimida ochiladi:
+      https://mes.korxona.uz/stansiya?station=KROMKA-01
+  → Sahifa ?station dan o'zini taniydi
+  → GET /api/settings?station=KROMKA-01  → kalibrlash, dopusklar
+  → navigator.serial.getPorts()  → Chrome siyosati bilan oldindan ruxsat berilgan
+  → Pico ga o'zi ulanadi, SET yuboradi
+  → Har 60 s: sozlamalar qayta so'raladi, o'zgargan bo'lsa Pico ga yuboriladi
+  → Hodisalar: IndexedDB navbat → POST /api/events  (tarmoq uzilsa saqlanadi)</pre>
+
+<p>Stansiya sahifasi <b>MES serverning o'zidan</b> beriladi. Monoblokda hech qanday fayl yo'q — faqat Chrome va bitta URL.</p>
+
+<h2><span>2</span> Talablar</h2>
+
+<table>
+<thead><tr><th>Nima</th><th>Nima uchun</th></tr></thead>
+<tbody>
+<tr><td><b>HTTPS</b> — haqiqiy sertifikat (Let's Encrypt yetadi)</td><td>WebSerial faqat himoyalangan kontekstda ishlaydi. HTTP da <code>navigator.serial</code> umuman yo'q.</td></tr>
+<tr><td>Chrome yoki Edge, 89+</td><td>WebSerial faqat Chromium brauzerlarida</td></tr>
+<tr><td>Windows 10/11, administrator huquqi (bir marta)</td><td>Chrome siyosati va avtostartni sozlash uchun</td></tr>
+<tr><td>Monoblokda doimiy tarmoq</td><td>Uzilsa navbat saqlanadi, lekin QR qidiruv ishlamaydi</td></tr>
+</tbody>
+</table>
+
+<h2><span>3</span> Stansiya URL sxemasi</h2>
+
+<pre>https://mes.korxona.uz/stansiya?station=KROMKA-01&amp;token=a8f3…</pre>
+
+<table>
+<thead><tr><th class="m">Parametr</th><th>Ma'nosi</th></tr></thead>
+<tbody>
+<tr><td class="m">station</td><td>Stansiya identifikatori. Sozlamalar shu kalit bo'yicha yuklanadi, hodisalar shu bilan belgilanadi.</td></tr>
+<tr><td class="m">token</td><td>Ixtiyoriy. Har so'rovda <code>X-Station-Token</code> sarlavhasi bilan yuboriladi. MES uni tekshiradi va bekor qila oladi.</td></tr>
+<tr><td class="m">mes</td><td>Ixtiyoriy. API boshqa domen bo'lsa. Odatda kerak emas — sahifa o'zi kelgan manzilni ishlatadi.</td></tr>
+</tbody>
+</table>
+
+<h2><span>4</span> Chrome siyosati — Serial portga avtomatik ruxsat</h2>
+
+<p>Bu eng muhim qadam. Usiz operator har yoqilganda "Pico ga ulanish" tugmasini bosib, portni tanlashi kerak bo'ladi.</p>
+
+<p>Windows da administrator sifatida <code>cmd</code> oching va bitta buyruq bajaring. Domenni o'zingiznikiga almashtiring:</p>
+
+<pre>reg add "HKLM\Software\Policies\Google\Chrome" /v SerialAllowUsbDevicesForUrls /t REG_SZ /d "[{\"devices\":[{\"vendor_id\":11914,\"product_id\":5}],\"urls\":[\"https://mes.korxona.uz\"]}]" /f</pre>
+
+<p><code>11914</code> = <code>0x2E8A</code> — Raspberry Pi vendor ID, <code>5</code> — MicroPython CDC product ID. Ya'ni ruxsat <b>faqat Pico ga</b> va <b>faqat sizning domeningizga</b> beriladi.</p>
+
+<p>Tekshirish: Chrome da <code>chrome://policy</code> oching, <code>SerialAllowUsbDevicesForUrls</code> ko'rinishi kerak. Ko'rinmasa Chrome ni to'liq yopib qayta oching.</p>
+
+<div class="box warn"><b>Edge uchun</b>
+Yo'l boshqacha: <code>HKLM\Software\Policies\Microsoft\Edge</code>, qolgani bir xil.</div>
+
+<h2><span>5</span> Kiosk avtostart</h2>
+
+<ol class="steps">
+<li><b>Bat fayl yarating</b> — masalan <code>C:\stansiya\start.bat</code>:
+<pre>@echo off
+timeout /t 15 /nobreak >nul
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk --app="https://mes.korxona.uz/stansiya?station=KROMKA-01" --no-first-run --disable-features=TranslateUI --disable-session-crashed-bubble --overscroll-history-navigation=0</pre>
+15 soniya kutish — tarmoq va USB tayyor bo'lishi uchun.</li>
+<li><b>Avtostartga qo'ying.</b> <code>Win+R</code> → <code>shell:startup</code> → ochilgan papkaga <code>start.bat</code> ning yorlig'ini tashlang.</li>
+<li><b>Avtomatik login.</b> <code>Win+R</code> → <code>netplwiz</code> → "Foydalanuvchilar parol kiritishi shart" belgisini oling → operator hisobini tanlang.</li>
+<li><b>Uyqu va qulfni o'chiring.</b> Sozlamalar → Tizim → Quvvat → ekran va uyqu "Hech qachon". Shaxsiylashtirish → Qulf ekrani → ekran taymeri o'chiq.</li>
+<li><b>Windows Update ni cheklang.</b> Sozlamalar → Yangilanish → Faol soatlar: smena vaqti. Aks holda tunda qayta yuklanib, ertalab login oynasida turadi.</li>
+</ol>
+
+<div class="box"><b>Kiosk dan chiqish</b>
+<code>Alt+F4</code> yoki <code>Ctrl+Shift+W</code>. Texnik xizmat uchun. Agar operator chiqib ketmasligi kerak bo'lsa — Windows "Assigned Access" (Sozlamalar → Hisoblar → Boshqa foydalanuvchilar → kiosk o'rnatish) — unda Chrome dan boshqa hech narsa ochilmaydi.</div>
+
+<h2><span>6</span> MES tomonida kerakli API</h2>
+
+<p>Stansiya sahifasi to'rtta endpoint bilan ishlaydi. Sinov serveri (<code>mes_server.py</code>) ularning aynan shu shaklini beradi — haqiqiy MES ham shunday bersa, sahifa o'zgarishsiz ishlaydi.</p>
+
+<h3>GET /api/part?qr=A-1001</h3>
+<pre>200 → {"code":"A-1001","name":"Yon panel","L":800,"W":600,"need":"2,2"}
+404 → {"error":"topilmadi"}</pre>
+
+<h3>GET /api/settings?station=KROMKA-01</h3>
+<pre>{"station":"KROMKA-01",
+ "kal":{"D":2003.4,"V10":9.87,"V18":17.92,"K":1.18,"TD":3},
+ "tol":{"detal":3},
+ "updated":"2026-09-09T14:22:10"}</pre>
+<p><code>updated</code> — o'zgarish belgisi. Sahifa har 60 soniyada so'raydi; farq bo'lsa yangi qiymatlarni Pico ga yuboradi. <b>MES da sozlamani o'zgartirish = stansiyani masofadan sozlash.</b></p>
+
+<h3>POST /api/settings</h3>
+<pre>← {"station":"KROMKA-01","kal":{...},"tol":{...}}
+→ {"ok":1,"updated":"2026-09-09T14:22:10"}</pre>
+
+<h3>POST /api/events</h3>
+<pre>← {"events":[
+     {"id":"KROMKA-01-000042-m1x9k","station":"KROMKA-01","ts":"…","type":"olchov",
+      "qr":"A-1002","expected_mm":2750,"measured_mm":2749.6,"delta_mm":0.4,"side":"uzun",
+      "verdict":"MOS","pico_kod":"OK","L1":2749.1,"L2":2750.1,"d1_us":8243700,"d2_us":8253000,
+      "v_meas":17.96,"v_nom":18,"ish_ms":6650},
+     {"id":"…","type":"ogoh","ch":2,"sabab":"javob_yoq"},
+     {"id":"…","type":"uskuna","holat":1},
+     {"id":"…","type":"tezlik","v":18}
+   ]}
+→ {"ack":["KROMKA-01-000042-m1x9k", …]}</pre>
+<p>Server <code>id</code> bo'yicha dublikatni tashlaydi (<code>INSERT … ON CONFLICT DO NOTHING</code>). Faqat <code>ack</code> da qaytgan <code>id</code> lar stansiya navbatidan o'chiriladi — tarmoq uzilsa yozuv yo'qolmaydi.</p>
+
+<h3>Hodisa turlari</h3>
+<table>
+<thead><tr><th class="m">type</th><th>Nima</th><th>MES da nima qilish</th></tr></thead>
+<tbody>
+<tr><td class="m">olchov</td><td>Bitta o'tkazish</td><td>Detal jurnaliga; <code>verdict=NOMOS</code> bo'lsa — brak hisobiga</td></tr>
+<tr><td class="m">ogoh</td><td>Datchik nosozligi</td><td>Texnik xizmatga xabar, <code>sabab</code> bo'yicha</td></tr>
+<tr><td class="m">uskuna</td><td>Ishlayapti / to'xtadi</td><td>Yuklanish foizi, bo'sh turish vaqti (OEE)</td></tr>
+<tr><td class="m">tezlik</td><td>Rejim almashdi</td><td>Metama'lumot</td></tr>
+</tbody>
+</table>
+
+<h2><span>7</span> Xavfsizlik</h2>
+
+<ul>
+<li><b>Token.</b> Har stansiyaga o'z tokeni. MES uni <code>X-Station-Token</code> sarlavhasidan tekshiradi. Bekor qilinsa — stansiya hech narsa yubora olmaydi.</li>
+<li><b>Mantiq serverda.</b> Monoblokda faqat brauzer. Kalibrlash, dopusk, detal ro'yxati — hammasi MES da. Nusxa olinadigan narsa yo'q.</li>
+<li><b>Serial ruxsati faqat Pico ga</b> (VID/PID bilan) va faqat sizning domeningizga. Boshqa sayt portga kira olmaydi.</li>
+<li><b>Operator hisobi administrator emas.</b> Chrome siyosatini o'zgartira olmaydi, dastur o'rnata olmaydi.</li>
+</ul>
+
+<h2><span>8</span> Tekshiruv ro'yxati</h2>
+
+<ol class="steps">
+<li>Brauzerda <code>https://mes.korxona.uz/stansiya?station=KROMKA-01</code> ochiladi, qulf belgisi yashil.</li>
+<li><code>chrome://policy</code> da <code>SerialAllowUsbDevicesForUrls</code> ko'rinadi.</li>
+<li>Sahifa yuklanganda Pico chipi <b>o'zi</b> yashil bo'ladi — tugma bosilmaydi.</li>
+<li>"Sozlama" chipida vaqt ko'rinadi — MES dan yuklandi.</li>
+<li>MES da dopuskni o'zgartiring → 60 soniyada stansiya chipi yangilanadi.</li>
+<li>Tarmoq kabelini uzing, detal o'tkazing → "navbat: 1". Ulang → 3 soniyada "navbat: 0".</li>
+<li>Monoblokni qayta yuklang → 1–5 qadamlar o'zi takrorlanadi.</li>
+</ol>
+
+</div>
+</body>
+</html>

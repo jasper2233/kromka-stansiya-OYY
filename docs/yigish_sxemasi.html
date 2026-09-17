@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To'liq yig'ish sxemasi — Kromka stansiyasi</title>
+<style>
+:root{--ink:#1C1917;--mut:#57534E;--dim:#8A857F;--rule:#D6D3D1;--acc:#0F6E56;--warn:#B45309;--dan:#B91C1C;--tint:#F5F4F1;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.6}
+.doc{max-width:880px;margin:0 auto;padding:36px 32px 80px}
+.head{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:28px}
+.head .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+.head h1{font-size:24px;font-weight:600;margin:6px 0 4px}
+.head p{margin:0;color:var(--mut);font-size:14px}
+h2{font-size:16.5px;font-weight:600;margin:38px 0 12px;padding-top:14px;border-top:1px solid var(--rule);display:flex;align-items:baseline;gap:12px}
+h2 span{font-family:var(--mono);font-size:12.5px;color:var(--acc);flex:none}
+h3{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+p{margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0 18px}
+th{text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+td{padding:6px 10px 6px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td.n{font-family:var(--mono);font-size:12px;width:36px;color:var(--acc);font-weight:600}
+td.m{font-family:var(--mono);font-size:12px;white-space:nowrap}
+tr.hl td{background:#FFF7ED}
+tr.iso td{background:#FEF2F2}
+code{font-family:var(--mono);font-size:12.5px;background:var(--tint);padding:1px 5px;border-radius:4px}
+figure{margin:16px 0 22px;padding:0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:12px;color:var(--mut);margin-top:8px}
+.box{border:1px solid var(--rule);border-radius:8px;padding:12px 15px;margin:14px 0;background:var(--tint);font-size:13.5px}
+.box.dan{border-color:var(--dan);background:#FEF2F2}.box.warn{border-color:var(--warn);background:#FFFBEB}
+.box b{display:block;margin-bottom:4px}.box.dan b{color:var(--dan)}.box.warn b{color:var(--warn)}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 14px 42px}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600}
+.chk{list-style:none;padding:0;margin:10px 0}
+.chk li{padding:6px 0 6px 28px;position:relative;border-bottom:1px solid var(--rule);font-size:13.5px}
+.chk li::before{content:"";position:absolute;left:2px;top:10px;width:12px;height:12px;border:1.5px solid var(--mut);border-radius:3px}
+@media print{.doc{max-width:none;padding:0}h2{page-break-after:avoid}figure,table,.box,ol.steps>li{page-break-inside:avoid}.pb{page-break-before:always}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="head">
+  <div class="k">Yig'ish hujjati · yakuniy</div>
+  <h1>To'liq yig'ish sxemasi</h1>
+  <p>Kromka stansiyasi kontrolleri — 4 kirish, 2 chiqish, bitta blok pitaniya, umumiy yer</p>
+</div>
+
+<h2><span>1</span> Komponentlar ro'yxati</h2>
+<table>
+<thead><tr><th>Komponent</th><th class="m">Soni</th><th>Belgi</th></tr></thead>
+<tbody>
+<tr><td>Raspberry Pi Pico</td><td class="m">1</td><td class="m">Pico</td></tr>
+<tr><td>E3Z-T61 NPN to'siq datchigi (nurlatgich + qabul qilgich)</td><td class="m">2 kompl.</td><td class="m">D1, D2</td></tr>
+<tr><td>PC817 / EL817 optopara</td><td class="m">4</td><td class="m">OA, OB, OC, OD</td></tr>
+<tr><td>Rezistor 4.7 kΩ</td><td class="m">4</td><td class="m">R1a–R1d</td></tr>
+<tr><td>Rezistor 10 kΩ</td><td class="m">1</td><td class="m">R2</td></tr>
+<tr><td>Rezistor 3.3 kΩ</td><td class="m">1</td><td class="m">R3</td></tr>
+<tr><td>Kondensator 10 µF, 25 V</td><td class="m">1</td><td class="m">C1</td></tr>
+<tr><td>Rele moduli 5 V, 1 kanal, Tongling (High/Low trigger)</td><td class="m">1</td><td class="m">RELE</td></tr>
+<tr><td>Usilitel XH-M564</td><td class="m">1</td><td class="m">USIL</td></tr>
+<tr><td>Dinamik 4–8 Ω, 10–20 W</td><td class="m">1</td><td class="m">DIN</td></tr>
+<tr><td>Blok pitaniya AL-2402, 24 V 2 A</td><td class="m">1</td><td class="m">PSU</td></tr>
+<tr><td>Klemma kolodka (6+ pozitsiya), maketka, montaj simi</td><td class="m">—</td><td class="m">—</td></tr>
+</tbody>
+</table>
+
+<h2><span>2</span> Kirishlar sxemasi</h2>
+
+<figure>
+<svg viewBox="0 0 760 460" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>To'rtta kirish kanalining optoparalar orqali Pico ga ulanishi</title>
+<desc>Yuqorida AL-2402 zonasida ikkita datchik, pastda ajratilgan uskuna zonasida tezlik va RUN signallari. Har biri rezistor va optopara orqali Pico ning tegishli oyog'iga boradi.</desc>
+
+<rect x="30" y="52" width="350" height="176" rx="8" fill="none" stroke="#0F6E56" stroke-width="0.8" stroke-dasharray="6 4"/>
+<text x="40" y="46" font-size="11" fill="#0F6E56" font-family="ui-monospace,monospace" letter-spacing=".06em">AL-2402 ZONASI — datchiklar, yer Pico bilan umumiy</text>
+<rect x="30" y="242" width="350" height="176" rx="8" fill="none" stroke="#B91C1C" stroke-width="0.8" stroke-dasharray="6 4"/>
+<text x="40" y="236" font-size="11" fill="#B91C1C" font-family="ui-monospace,monospace" letter-spacing=".06em">USKUNA ZONASI — galvanik ajratilgan, yer ULANMAYDI</text>
+
+<rect x="570" y="52" width="150" height="366" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+<text x="645" y="404" text-anchor="middle" font-size="14" font-weight="600" fill="#3C3489" font-family="system-ui">Pico</text>
+
+<!-- row 1 : yc=100 -->
+<rect x="40" y="65" width="180" height="70" rx="7" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+<text x="130" y="84" text-anchor="middle" font-size="13" font-weight="500" fill="#085041" font-family="system-ui">Datchik 1 — kirish</text>
+<text x="130" y="102" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="system-ui">jigarrang → +24 V</text>
+<text x="130" y="118" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="system-ui">ko'k → 0 V</text>
+<line x1="220" y1="116" x2="330" y2="116" stroke="#1C1917" stroke-width="1.5"/>
+<text x="275" y="128" text-anchor="middle" font-size="10.5" fill="#57534E" font-family="system-ui">qora</text>
+<text x="264" y="88" text-anchor="end" font-size="11" fill="#57534E" font-family="system-ui">+24 V</text>
+<rect x="270" y="74" width="44" height="20" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="292" y="88" text-anchor="middle" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">R1a</text>
+<line x1="314" y1="84" x2="330" y2="84" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="330" y="70" width="100" height="60" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/>
+<text x="380" y="104" text-anchor="middle" font-size="12" font-weight="500" fill="#2C2C2A" font-family="system-ui">OA</text>
+<text x="338" y="88" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">1</text>
+<text x="338" y="122" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">2</text>
+<text x="422" y="88" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">4</text>
+<text x="422" y="122" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">3</text>
+<line x1="430" y1="84" x2="570" y2="84" stroke="#1C1917" stroke-width="1.5"/>
+<text x="578" y="88" font-size="11.5" fill="#3C3489" font-family="ui-monospace,monospace">GP2 · 4-pin</text>
+<line x1="430" y1="116" x2="460" y2="116" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="460" y1="116" x2="460" y2="124" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="452" y1="124" x2="468" y2="124" stroke="#1C1917" stroke-width="1.5"/><line x1="455" y1="128" x2="465" y2="128" stroke="#1C1917" stroke-width="1.5"/><line x1="458" y1="132" x2="462" y2="132" stroke="#1C1917" stroke-width="1.5"/>
+
+<!-- row 2 : yc=180 -->
+<rect x="40" y="145" width="180" height="70" rx="7" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+<text x="130" y="164" text-anchor="middle" font-size="13" font-weight="500" fill="#085041" font-family="system-ui">Datchik 2 — chiqish</text>
+<text x="130" y="182" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="system-ui">jigarrang → +24 V</text>
+<text x="130" y="198" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="system-ui">ko'k → 0 V</text>
+<line x1="220" y1="196" x2="330" y2="196" stroke="#1C1917" stroke-width="1.5"/>
+<text x="275" y="208" text-anchor="middle" font-size="10.5" fill="#57534E" font-family="system-ui">qora</text>
+<text x="264" y="168" text-anchor="end" font-size="11" fill="#57534E" font-family="system-ui">+24 V</text>
+<rect x="270" y="154" width="44" height="20" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="292" y="168" text-anchor="middle" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">R1b</text>
+<line x1="314" y1="164" x2="330" y2="164" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="330" y="150" width="100" height="60" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/>
+<text x="380" y="184" text-anchor="middle" font-size="12" font-weight="500" fill="#2C2C2A" font-family="system-ui">OB</text>
+<text x="338" y="168" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">1</text>
+<text x="338" y="202" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">2</text>
+<text x="422" y="168" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">4</text>
+<text x="422" y="202" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">3</text>
+<line x1="430" y1="164" x2="570" y2="164" stroke="#1C1917" stroke-width="1.5"/>
+<text x="578" y="168" font-size="11.5" fill="#3C3489" font-family="ui-monospace,monospace">GP6 · 9-pin</text>
+<line x1="430" y1="196" x2="460" y2="196" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="460" y1="196" x2="460" y2="204" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="452" y1="204" x2="468" y2="204" stroke="#1C1917" stroke-width="1.5"/><line x1="455" y1="208" x2="465" y2="208" stroke="#1C1917" stroke-width="1.5"/><line x1="458" y1="212" x2="462" y2="212" stroke="#1C1917" stroke-width="1.5"/>
+
+<!-- row 3 : yc=290 -->
+<rect x="40" y="255" width="180" height="70" rx="7" fill="#FEF2F2" stroke="#B91C1C" stroke-width="0.6"/>
+<text x="130" y="274" text-anchor="middle" font-size="13" font-weight="500" fill="#7A1A1A" font-family="system-ui">Tezlik signali</text>
+<text x="130" y="292" text-anchor="middle" font-size="11" fill="#B91C1C" font-family="system-ui">HMI → chastotnik liniyasi</text>
+<text x="130" y="308" text-anchor="middle" font-size="11" fill="#B91C1C" font-family="system-ui">uskuna +24 V / 0 V</text>
+<line x1="220" y1="306" x2="330" y2="306" stroke="#1C1917" stroke-width="1.5"/>
+<text x="275" y="318" text-anchor="middle" font-size="10.5" fill="#57534E" font-family="system-ui">uskuna 0 V</text>
+<text x="264" y="278" text-anchor="end" font-size="11" fill="#57534E" font-family="system-ui">+24 V</text>
+<rect x="270" y="264" width="44" height="20" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="292" y="278" text-anchor="middle" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">R1c</text>
+<line x1="314" y1="274" x2="330" y2="274" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="330" y="260" width="100" height="60" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/>
+<text x="380" y="294" text-anchor="middle" font-size="12" font-weight="500" fill="#2C2C2A" font-family="system-ui">OC</text>
+<text x="338" y="278" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">1</text>
+<text x="338" y="312" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">2</text>
+<text x="422" y="278" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">4</text>
+<text x="422" y="312" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">3</text>
+<line x1="430" y1="274" x2="570" y2="274" stroke="#1C1917" stroke-width="1.5"/>
+<text x="578" y="278" font-size="11.5" fill="#3C3489" font-family="ui-monospace,monospace">GP10 · 14-pin</text>
+<line x1="430" y1="306" x2="460" y2="306" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="460" y1="306" x2="460" y2="314" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="452" y1="314" x2="468" y2="314" stroke="#1C1917" stroke-width="1.5"/><line x1="455" y1="318" x2="465" y2="318" stroke="#1C1917" stroke-width="1.5"/><line x1="458" y1="322" x2="462" y2="322" stroke="#1C1917" stroke-width="1.5"/>
+
+<!-- row 4 : yc=370 -->
+<rect x="40" y="335" width="180" height="70" rx="7" fill="#FEF2F2" stroke="#B91C1C" stroke-width="0.6"/>
+<text x="130" y="354" text-anchor="middle" font-size="13" font-weight="500" fill="#7A1A1A" font-family="system-ui">RUN signali</text>
+<text x="130" y="372" text-anchor="middle" font-size="11" fill="#B91C1C" font-family="system-ui">chastotnik RUN chiqishi</text>
+<text x="130" y="388" text-anchor="middle" font-size="11" fill="#B91C1C" font-family="system-ui">uskuna +24 V / 0 V</text>
+<line x1="220" y1="386" x2="330" y2="386" stroke="#1C1917" stroke-width="1.5"/>
+<text x="275" y="398" text-anchor="middle" font-size="10.5" fill="#57534E" font-family="system-ui">uskuna 0 V</text>
+<text x="264" y="358" text-anchor="end" font-size="11" fill="#57534E" font-family="system-ui">+24 V</text>
+<rect x="270" y="344" width="44" height="20" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="292" y="358" text-anchor="middle" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">R1d</text>
+<line x1="314" y1="354" x2="330" y2="354" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="330" y="340" width="100" height="60" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/>
+<text x="380" y="374" text-anchor="middle" font-size="12" font-weight="500" fill="#2C2C2A" font-family="system-ui">OD</text>
+<text x="338" y="358" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">1</text>
+<text x="338" y="392" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">2</text>
+<text x="422" y="358" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">4</text>
+<text x="422" y="392" text-anchor="end" font-size="11" fill="#1C1917" font-family="ui-monospace,monospace">3</text>
+<line x1="430" y1="354" x2="570" y2="354" stroke="#1C1917" stroke-width="1.5"/>
+<text x="578" y="358" font-size="11.5" fill="#3C3489" font-family="ui-monospace,monospace">GP11 · 15-pin</text>
+<line x1="430" y1="386" x2="460" y2="386" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="460" y1="386" x2="460" y2="394" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="452" y1="394" x2="468" y2="394" stroke="#1C1917" stroke-width="1.5"/><line x1="455" y1="398" x2="465" y2="398" stroke="#1C1917" stroke-width="1.5"/><line x1="458" y1="402" x2="462" y2="402" stroke="#1C1917" stroke-width="1.5"/>
+
+<text x="40" y="444" font-size="11" fill="#57534E" font-family="system-ui">Yer belgisi — Pico GND (3-pin). Barcha optoparalarning 3-oyog'i shu yerga. R1a–R1d = 4.7 kΩ. OA–OD = PC817.</text>
+</svg>
+<figcaption>2-rasm. Kirishlar. Yuqoridagi ikki qator AL-2402 dan, pastdagi ikki qator uskunadan oziqlanadi. Har bir optoparaning chap tomoni manba zonasida, o'ng tomoni Pico zonasida.</figcaption>
+</figure>
+
+<div class="box dan"><b>Uskuna zonasi — ikki sim, boshqa hech narsa</b>
+OC va OD ning 1–2 oyoqlariga faqat uskunaning +24 V (R1 orqali) va 0 V i keladi. Bu ikki sim Pico ga, AL-2402 ga, klemma kolodkaga — hech qayerga tegmaydi. Optoparaning ichi yagona o'tish nuqtasi.</div>
+
+<h2 class="pb"><span>3</span> Chiqishlar sxemasi</h2>
+
+<figure>
+<svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Rele moduli va usilitelning Pico ga ulanishi</title>
+<desc>Pico dan uchta sim rele moduliga, ikkita sim va bo'luvchi zanjiri orqali usilitelga boradi. Rele lampani, usilitel dinamikni boshqaradi.</desc>
+
+<rect x="40" y="50" width="140" height="310" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+<text x="110" y="344" text-anchor="middle" font-size="14" font-weight="600" fill="#3C3489" font-family="system-ui">Pico</text>
+<g font-size="11.5" font-family="ui-monospace,monospace" fill="#3C3489" text-anchor="end">
+<text x="172" y="104">VBUS · 40</text><text x="172" y="144">GND · 38</text><text x="172" y="184">GP14 · 19</text>
+<text x="172" y="264">GP16 · 21</text><text x="172" y="304">GND · 3</text>
+</g>
+<line x1="110" y1="360" x2="110" y2="384" stroke="#57534E" stroke-width="1.2"/>
+<text x="118" y="381" font-size="11" fill="#57534E" font-family="system-ui">USB → monoblok</text>
+
+<line x1="180" y1="100" x2="280" y2="100" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="180" y1="140" x2="280" y2="140" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="180" y1="180" x2="280" y2="180" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="280" y="80" width="160" height="120" rx="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
+<text x="360" y="100" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="system-ui">Rele moduli</text>
+<g font-size="11" font-family="ui-monospace,monospace" fill="#633806">
+<text x="288" y="104">DC+</text><text x="288" y="144">DC−</text><text x="288" y="184">IN</text>
+<text x="432" y="124" text-anchor="end">COM</text><text x="432" y="164" text-anchor="end">NO</text>
+</g>
+<text x="360" y="192" text-anchor="middle" font-size="10.5" fill="#854F0B" font-family="system-ui">sakratkich: Low</text>
+<line x1="440" y1="120" x2="480" y2="120" stroke="#1C1917" stroke-width="1.5"/>
+<text x="486" y="124" font-size="11" fill="#57534E" font-family="system-ui">~220 V faza (yoki +24 V)</text>
+<line x1="440" y1="160" x2="530" y2="160" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="530" y="135" width="100" height="50" rx="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
+<text x="580" y="164" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="system-ui">Lampa</text>
+<line x1="630" y1="160" x2="670" y2="160" stroke="#1C1917" stroke-width="1.5"/>
+<text x="676" y="164" font-size="11" fill="#57534E" font-family="system-ui">nol (0 V)</text>
+
+<line x1="180" y1="260" x2="200" y2="260" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="200" y="250" width="40" height="20" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="220" y="264" text-anchor="middle" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">R2 10k</text>
+<line x1="240" y1="260" x2="256" y2="260" stroke="#1C1917" stroke-width="1.5"/>
+<circle cx="256" cy="260" r="3" fill="#1C1917"/>
+<text x="256" y="246" text-anchor="middle" font-size="10.5" fill="#57534E" font-family="system-ui">A</text>
+<line x1="256" y1="260" x2="256" y2="276" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="246" y="276" width="20" height="34" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="240" y="297" text-anchor="end" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">R3 3.3k</text>
+<line x1="256" y1="310" x2="256" y2="322" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="248" y1="322" x2="264" y2="322" stroke="#1C1917" stroke-width="1.5"/><line x1="251" y1="326" x2="261" y2="326" stroke="#1C1917" stroke-width="1.5"/><line x1="254" y1="330" x2="258" y2="330" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="256" y1="260" x2="268" y2="260" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="270" y1="251" x2="270" y2="269" stroke="#1C1917" stroke-width="2"/>
+<line x1="277" y1="251" x2="277" y2="269" stroke="#1C1917" stroke-width="2"/>
+<text x="265" y="247" font-size="9" fill="#1C1917" font-family="system-ui">+</text>
+<text x="273" y="284" text-anchor="middle" font-size="10.5" fill="#633806" font-family="ui-monospace,monospace">C1 10µ</text>
+<line x1="279" y1="260" x2="300" y2="260" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="180" y1="300" x2="300" y2="300" stroke="#1C1917" stroke-width="1.5"/>
+
+<rect x="300" y="230" width="150" height="130" rx="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
+<text x="375" y="250" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="system-ui">XH-M564</text>
+<g font-size="11" font-family="ui-monospace,monospace" fill="#633806">
+<text x="308" y="264">NL</text><text x="308" y="304">GND</text>
+<text x="442" y="264" text-anchor="end">SPL+</text><text x="442" y="304" text-anchor="end">SPL−</text>
+</g>
+<text x="375" y="332" text-anchor="middle" font-size="10.5" fill="#854F0B" font-family="system-ui">VCC ← AL-2402 +24 V</text>
+<text x="375" y="348" text-anchor="middle" font-size="10.5" fill="#854F0B" font-family="system-ui">GND ← AL-2402 0 V</text>
+<line x1="450" y1="260" x2="530" y2="260" stroke="#1C1917" stroke-width="1.5"/>
+<line x1="450" y1="300" x2="530" y2="300" stroke="#1C1917" stroke-width="1.5"/>
+<rect x="530" y="250" width="100" height="70" rx="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
+<text x="580" y="290" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="system-ui">Dinamik</text>
+</svg>
+<figcaption>3-rasm. Chiqishlar. A nuqta — R2, R3 va C1 tutashadigan joy. Usilitelning VCC/GND quvvat shtirlari AL-2402 dan, signal GND shtiri Pico dan.</figcaption>
+</figure>
+
+<h2><span>4</span> Pico oyoqchalari — orqa tomon</h2>
+
+<figure>
+<svg viewBox="0 0 760 440" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Pico platasining orqa tomonida ishlatiladigan oyoqchalar</title>
+<desc>USB tepada. Chap ustunda VBUS, GND va GP16, o'ng ustunda GND, GP2, GP6, GP10, GP11, GP14 belgilangan.</desc>
+<rect x="362" y="24" width="36" height="10" rx="2" fill="#B9B9B9" stroke="#8A8A8A" stroke-width="0.6"/>
+<text x="380" y="18" text-anchor="middle" font-size="10" fill="#57534E" font-family="system-ui">USB</text>
+<rect x="290" y="34" width="180" height="398" rx="8" fill="#1E6B44" stroke="#12472D" stroke-width="1"/>
+<g fill="#C9A227">
+<circle cx="298" cy="60" r="4"/><circle cx="298" cy="78" r="4"/><circle cx="298" cy="114" r="4"/><circle cx="298" cy="132" r="4"/><circle cx="298" cy="150" r="4"/><circle cx="298" cy="168" r="4"/><circle cx="298" cy="186" r="4"/><circle cx="298" cy="204" r="4"/><circle cx="298" cy="222" r="4"/><circle cx="298" cy="240" r="4"/><circle cx="298" cy="258" r="4"/><circle cx="298" cy="276" r="4"/><circle cx="298" cy="294" r="4"/><circle cx="298" cy="312" r="4"/><circle cx="298" cy="330" r="4"/><circle cx="298" cy="348" r="4"/><circle cx="298" cy="366" r="4"/><circle cx="298" cy="384" r="4"/>
+<circle cx="462" cy="60" r="4"/><circle cx="462" cy="78" r="4"/><circle cx="462" cy="132" r="4"/><circle cx="462" cy="150" r="4"/><circle cx="462" cy="168" r="4"/><circle cx="462" cy="186" r="4"/><circle cx="462" cy="222" r="4"/><circle cx="462" cy="240" r="4"/><circle cx="462" cy="258" r="4"/><circle cx="462" cy="276" r="4"/><circle cx="462" cy="330" r="4"/><circle cx="462" cy="348" r="4"/><circle cx="462" cy="366" r="4"/><circle cx="462" cy="402" r="4"/>
+</g>
+<g fill="#F0A32B" stroke="#7A4E08" stroke-width="1.2">
+<circle cx="298" cy="60" r="5.5"/><circle cx="298" cy="96" r="5.5"/><circle cx="298" cy="402" r="5.5"/>
+<circle cx="462" cy="96" r="5.5"/><circle cx="462" cy="114" r="5.5"/><circle cx="462" cy="204" r="5.5"/><circle cx="462" cy="294" r="5.5"/><circle cx="462" cy="312" r="5.5"/><circle cx="462" cy="384" r="5.5"/>
+</g>
+<g font-size="9.5" font-family="ui-monospace,monospace" fill="#B8DEC9">
+<text x="310" y="63">VBUS</text><text x="310" y="81">VSYS</text><text x="310" y="99">GND</text><text x="310" y="117">3V3_EN</text><text x="310" y="135">3V3</text><text x="310" y="153">ADC_VREF</text><text x="310" y="171">GP28</text><text x="310" y="189">AGND</text><text x="310" y="207">GP27</text><text x="310" y="225">GP26</text><text x="310" y="243">RUN</text><text x="310" y="261">GP22</text><text x="310" y="279">GND</text><text x="310" y="297">GP21</text><text x="310" y="315">GP20</text><text x="310" y="333">GP19</text><text x="310" y="351">GP18</text><text x="310" y="369">GND</text><text x="310" y="387">GP17</text><text x="310" y="405">GP16</text>
+<text x="450" y="63" text-anchor="end">GP0</text><text x="450" y="81" text-anchor="end">GP1</text><text x="450" y="99" text-anchor="end">GND</text><text x="450" y="117" text-anchor="end">GP2</text><text x="450" y="135" text-anchor="end">GP3</text><text x="450" y="153" text-anchor="end">GP4</text><text x="450" y="171" text-anchor="end">GP5</text><text x="450" y="189" text-anchor="end">GND</text><text x="450" y="207" text-anchor="end">GP6</text><text x="450" y="225" text-anchor="end">GP7</text><text x="450" y="243" text-anchor="end">GP8</text><text x="450" y="261" text-anchor="end">GP9</text><text x="450" y="279" text-anchor="end">GND</text><text x="450" y="297" text-anchor="end">GP10</text><text x="450" y="315" text-anchor="end">GP11</text><text x="450" y="333" text-anchor="end">GP12</text><text x="450" y="351" text-anchor="end">GP13</text><text x="450" y="369" text-anchor="end">GND</text><text x="450" y="387" text-anchor="end">GP14</text><text x="450" y="405" text-anchor="end">GP15</text>
+</g>
+<g stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3">
+<line x1="288" y1="60" x2="200" y2="60"/><line x1="288" y1="96" x2="200" y2="96"/><line x1="288" y1="402" x2="200" y2="402"/>
+<line x1="472" y1="96" x2="560" y2="96"/><line x1="472" y1="114" x2="560" y2="114"/><line x1="472" y1="204" x2="560" y2="204"/><line x1="472" y1="294" x2="560" y2="294"/><line x1="472" y1="312" x2="560" y2="312"/><line x1="472" y1="384" x2="560" y2="384"/>
+</g>
+<g font-size="11.5" fill="#1C1917" font-family="system-ui">
+<text x="194" y="64" text-anchor="end">40 — VBUS → rele DC+</text>
+<text x="194" y="100" text-anchor="end">38 — GND → rele DC−, AL-2402 0 V, usilitel GND</text>
+<text x="194" y="406" text-anchor="end">21 — GP16 → R2 → usilitel</text>
+<text x="566" y="100">3 — GND ← OA, OB, OC, OD 3-oyoqlar, R3</text>
+<text x="566" y="118">4 — GP2 ← OA 4-oyoq (datchik 1)</text>
+<text x="566" y="208">9 — GP6 ← OB 4-oyoq (datchik 2)</text>
+<text x="566" y="298">14 — GP10 ← OC 4-oyoq (tezlik)</text>
+<text x="566" y="316">15 — GP11 ← OD 4-oyoq (RUN)</text>
+<text x="566" y="388">19 — GP14 → rele IN</text>
+</g>
+</svg>
+<figcaption>4-rasm. Orqa tomondan qaralganda, USB yuqorida. To'q sariq — ishlatiladigan 9 ta oyoqcha. Simlar teshikka orqadan lehimlanadi.</figcaption>
+</figure>
+
+<h2 class="pb"><span>5</span> Ulanish jadvali — 38 sim</h2>
+<p>Har bir simni ulagach belgilab boring. Sariq — signal yo'lining asosiy nuqtalari. Qizil — ajratilgan uskuna zonasi.</p>
+
+<h3>A · AL-2402 va datchiklar</h3>
+<table>
+<thead><tr><th class="n">№</th><th>Qayerdan</th><th>Qayerga</th><th>Izoh</th></tr></thead>
+<tbody>
+<tr><td class="n">1</td><td>AL-2402 <b>plyus</b></td><td>Klemma <code>+24V</code></td><td>Qutbni oldin multimetr bilan tekshiring</td></tr>
+<tr><td class="n">2</td><td>AL-2402 <b>minus</b></td><td>Klemma <code>0V</code></td><td></td></tr>
+<tr><td class="n">3</td><td>D1 nurlatgich jigarrang</td><td>Klemma <code>+24V</code></td><td></td></tr>
+<tr><td class="n">4</td><td>D1 nurlatgich ko'k</td><td>Klemma <code>0V</code></td><td></td></tr>
+<tr><td class="n">5</td><td>D1 qabul qilgich jigarrang</td><td>Klemma <code>+24V</code></td><td></td></tr>
+<tr><td class="n">6</td><td>D1 qabul qilgich ko'k</td><td>Klemma <code>0V</code></td><td></td></tr>
+<tr><td class="n">7</td><td>D2 nurlatgich jigarrang</td><td>Klemma <code>+24V</code></td><td></td></tr>
+<tr><td class="n">8</td><td>D2 nurlatgich ko'k</td><td>Klemma <code>0V</code></td><td></td></tr>
+<tr><td class="n">9</td><td>D2 qabul qilgich jigarrang</td><td>Klemma <code>+24V</code></td><td></td></tr>
+<tr><td class="n">10</td><td>D2 qabul qilgich ko'k</td><td>Klemma <code>0V</code></td><td></td></tr>
+<tr><td class="n">11</td><td>Klemma <code>+24V</code></td><td>R1a → OA <b>1-oyoq</b></td><td>4.7 kΩ</td></tr>
+<tr class="hl"><td class="n">12</td><td>D1 qabul qilgich <b>qora</b></td><td>OA <b>2-oyoq</b></td><td>Signal</td></tr>
+<tr><td class="n">13</td><td>Klemma <code>+24V</code></td><td>R1b → OB <b>1-oyoq</b></td><td>4.7 kΩ</td></tr>
+<tr class="hl"><td class="n">14</td><td>D2 qabul qilgich <b>qora</b></td><td>OB <b>2-oyoq</b></td><td>Signal</td></tr>
+<tr class="hl"><td class="n">15</td><td>OA <b>4-oyoq</b></td><td>Pico <code>GP2</code> — 4-pin</td><td></td></tr>
+<tr><td class="n">16</td><td>OA <b>3-oyoq</b></td><td>Pico <code>GND</code> — 3-pin</td><td></td></tr>
+<tr class="hl"><td class="n">17</td><td>OB <b>4-oyoq</b></td><td>Pico <code>GP6</code> — 9-pin</td><td></td></tr>
+<tr><td class="n">18</td><td>OB <b>3-oyoq</b></td><td>Pico <code>GND</code> — 3-pin</td><td></td></tr>
+<tr class="hl"><td class="n">19</td><td>Klemma <code>0V</code></td><td>Pico <code>GND</code> — 38-pin</td><td><b>Umumiy yer</b> — usilitel uchun shart</td></tr>
+</tbody>
+</table>
+
+<h3>B · Uskuna signallari — ajratilgan zona</h3>
+<table>
+<thead><tr><th class="n">№</th><th>Qayerdan</th><th>Qayerga</th><th>Izoh</th></tr></thead>
+<tbody>
+<tr class="iso"><td class="n">20</td><td>Uskuna <b>+24 V</b> (tezlik liniyasi)</td><td>R1c → OC <b>1-oyoq</b></td><td>4.7 kΩ</td></tr>
+<tr class="iso"><td class="n">21</td><td>Uskuna <b>0 V</b> (o'sha zanjir)</td><td>OC <b>2-oyoq</b></td><td>Pico ga tegmaydi</td></tr>
+<tr><td class="n">22</td><td>OC <b>4-oyoq</b></td><td>Pico <code>GP10</code> — 14-pin</td><td></td></tr>
+<tr><td class="n">23</td><td>OC <b>3-oyoq</b></td><td>Pico <code>GND</code> — 3-pin</td><td></td></tr>
+<tr class="iso"><td class="n">24</td><td>Uskuna <b>+24 V</b> (RUN liniyasi)</td><td>R1d → OD <b>1-oyoq</b></td><td>4.7 kΩ</td></tr>
+<tr class="iso"><td class="n">25</td><td>Uskuna <b>0 V</b> (RUN zanjiri)</td><td>OD <b>2-oyoq</b></td><td>Pico ga tegmaydi</td></tr>
+<tr><td class="n">26</td><td>OD <b>4-oyoq</b></td><td>Pico <code>GP11</code> — 15-pin</td><td></td></tr>
+<tr><td class="n">27</td><td>OD <b>3-oyoq</b></td><td>Pico <code>GND</code> — 3-pin</td><td></td></tr>
+</tbody>
+</table>
+
+<h3>C · Rele moduli va lampa</h3>
+<table>
+<thead><tr><th class="n">№</th><th>Qayerdan</th><th>Qayerga</th><th>Izoh</th></tr></thead>
+<tbody>
+<tr><td class="n">28</td><td>Pico <code>VBUS</code> — 40-pin</td><td>Rele <code>DC+</code></td><td>5 V</td></tr>
+<tr><td class="n">29</td><td>Pico <code>GND</code> — 38-pin</td><td>Rele <code>DC−</code></td><td></td></tr>
+<tr class="hl"><td class="n">30</td><td>Pico <code>GP14</code> — 19-pin</td><td>Rele <code>IN</code></td><td>Sakratkich: Low</td></tr>
+<tr><td class="n">31</td><td>~220 V faza (yoki +24 V)</td><td>Rele <code>COM</code></td><td>Avtomat o'chiq holda</td></tr>
+<tr><td class="n">32</td><td>Rele <code>NO</code></td><td>Lampa</td><td></td></tr>
+<tr><td class="n">33</td><td>Lampa</td><td>~220 V nol (yoki 0 V)</td><td></td></tr>
+</tbody>
+</table>
+
+<h3>D · Usilitel va dinamik</h3>
+<table>
+<thead><tr><th class="n">№</th><th>Qayerdan</th><th>Qayerga</th><th>Izoh</th></tr></thead>
+<tbody>
+<tr><td class="n">34</td><td>Klemma <code>+24V</code></td><td>USIL <code>VCC</code></td><td></td></tr>
+<tr><td class="n">35</td><td>Klemma <code>0V</code></td><td>USIL <code>GND</code> (VCC yonidagi)</td><td>Quvvat yeri</td></tr>
+<tr class="hl"><td class="n">36</td><td>Pico <code>GP16</code> — 21-pin</td><td>R2 (10 kΩ) → <b>A nuqta</b></td><td></td></tr>
+<tr><td class="n">37</td><td>A nuqta</td><td>R3 (3.3 kΩ) → Pico <code>GND</code></td><td></td></tr>
+<tr class="hl"><td class="n">38</td><td>A nuqta</td><td>C1 (10 µF, <b>+</b> A tomonda) → USIL <code>NL</code></td><td>Sinovda C1 siz ham bo'ladi</td></tr>
+<tr><td class="n">39</td><td>Pico <code>GND</code></td><td>USIL <code>GND</code> (NL yonidagi)</td><td>Signal yeri</td></tr>
+<tr><td class="n">40</td><td>USIL <code>SPL+</code></td><td>Dinamik</td><td></td></tr>
+<tr><td class="n">41</td><td>USIL <code>SPL−</code></td><td>Dinamik</td><td></td></tr>
+<tr><td class="n">42</td><td>Pico micro-USB</td><td>Monoblok</td><td>Data kabel</td></tr>
+</tbody>
+</table>
+
+<h2 class="pb"><span>6</span> Yig'ish tartibi</h2>
+
+<ol class="steps">
+<li><b>Quvvat.</b> AL-2402 ni rozetkaga ulab, multimetr bilan qutbni aniqlang. Plyus simni qizil izolenta bilan belgilang. Klemma kolodkaga 1–2 simlarni ulang. Klemmada 24 V borligini tekshiring, so'ng rozetkadan uzing.</li>
+<li><b>Datchiklar.</b> D1 va D2 ni o'rnating, tekislang, <code>L/D</code> ni <code>D</code> ga qo'ying. 3–10 simlarni ulang. Quvvat berib, qabul qilgichlardagi indikator yonishini ko'ring. Nurni qo'l bilan to'sib, indikator o'zgarishini tekshiring.</li>
+<li><b>Datchik optoparalari.</b> Maketkaga OA va OB ni <b>markaziy ariq ustiga</b> o'rnating. 11–14 simlarni ulang. Multimetr: nur to'silganda OA 1↔2 oyoqlar orasida ~1.1 V.</li>
+<li><b>Pico kirishlari.</b> Pico ni orqa tomoni bilan yotqizib, 15–19 simlarni lehimlang. USB ga ulab, <code>tekshir.py</code> ni ishga tushiring. Nurni to'sganda <code>GP2</code> va <code>GP6</code> 0 ga tushsin.</li>
+<li><b>Uskuna signallari.</b> Uskunaning tezlik va RUN liniyalarida multimetr bilan 24 V borligini tasdiqlang. OC va OD ni maketkaga o'rnating, 20–27 simlarni ulang. <code>tekshir.py</code> da <code>GP10</code> va <code>GP11</code> ni kuzating.</li>
+<li><b>Ajratishni tekshiring.</b> Multimetr, prozvonka: <code>uskuna 0V ↔ Pico GND</code> — uzuq bo'lishi shart. <code>AL-2402 0V ↔ Pico GND</code> — tutashgan bo'lishi shart.</li>
+<li><b>Rele.</b> 28–30 simlarni ulang, sakratkichni Low ga. Sinov kodi bilan relening "chirt" tovushini eshiting. Faqat keyin 31–33 (lampa) — avtomat o'chiq holda.</li>
+<li><b>Usilitel.</b> 34–41 simlarni ulang. Tovush regulyatori 30%. PWM sinov kodi bilan dinamikdan "biip" chiqishini tekshiring.</li>
+<li><b>Korpus.</b> Maketka, Pico, rele va usilitelni plastik korpusga joylang. USB kabelni xomut bilan mahkamlang. 220 V simlarini past kuchlanish simlaridan alohida tortib, yopiq holda qoldiring.</li>
+</ol>
+
+<h2><span>7</span> Yakuniy tekshiruv</h2>
+
+<ul class="chk">
+<li><b>Yer:</b> AL-2402 0V ↔ Pico GND = 0 Ω · Uskuna 0V ↔ Pico GND = cheksiz</li>
+<li><b>Datchiklar:</b> nur to'silganda GP2 / GP6 → 0, ochilganda → 1</li>
+<li><b>Tezlik:</b> HMI dan 18 m/min yoqilganda GP10 → 0</li>
+<li><b>RUN:</b> podacha ishlaganda GP11 → 0</li>
+<li><b>Rele:</b> GP14 → 0 bo'lganda rele tortadi, lampa yonadi</li>
+<li><b>Sirena:</b> GP16 PWM bo'lganda dinamikdan tovush chiqadi</li>
+<li><b>Pico:</b> rele tortganda va sirena chalganda qayta yuklanmaydi</li>
+</ul>
+
+<div class="box warn"><b>Agar Pico rele tortganda qayta yuklansa</b>
+VBUS va GND orasiga 100 µF kondensator (16 V yetadi, plyus VBUS ga). Bitta relede kamdan-kam bo'ladi.</div>
+
+<div class="box dan"><b>Xavfsizlik</b>
+220 V zanjirida ishlashdan oldin avtomatni o'chiring va kuchlanish yo'qligini tekshiring. Pico ning oyoqchalariga 5 V yoki 24 V hech qachon bermang. Uskuna zanjiriga ulanishdan oldin uskuna xizmatchisi bilan kelishing.</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="uz" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kromka stansiyasi</title>
+<style>
+:root{--bg:#16181B;--panel:#1E2126;--panel2:#262A30;--line:#33383F;--fg:#E4E7EB;--muted:#949BA6;--dim:#6B7480;
+  --ok:#3FBF6B;--info:#4A9EEA;--alarm:#E0533D;--amber:#F0A32B;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px}
+.shell{max-width:1140px;margin:0 auto;padding:14px 16px 50px}
+h2{font-size:11px;font-weight:600;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 4px 12px;flex-wrap:wrap}
+header b{font-size:16px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:20px;padding:4px 11px;background:var(--panel)}
+.chip.ok{border-color:var(--ok);color:var(--ok)}.chip.bad{border-color:var(--alarm);color:var(--alarm)}
+.chip.wait{border-color:var(--amber);color:var(--amber)}.chip.info{border-color:var(--info);color:var(--info)}
+.led{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block;margin-right:6px}
+.led.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+#alarmBar{display:none;background:var(--alarm);color:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;align-items:center;justify-content:space-between;gap:16px}
+#alarmBar.on{display:flex}#alarmBar b{font-size:20px}#alarmBar small{display:block;font-size:13px;opacity:.9;margin-top:3px}
+#alarmBar button{background:#fff;color:var(--alarm);border:none;border-radius:8px;padding:14px 26px;font-size:16px;font-weight:700;cursor:pointer}
+.verdict{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+.vband{height:6px;background:var(--dim)}.vband.ok{background:var(--ok)}.vband.bad{background:var(--alarm)}.vband.warn{background:var(--amber)}.vband.run{background:var(--info)}
+.vin{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+#vtext{font-size:clamp(24px,4.5vw,38px);font-weight:600;line-height:1.1}#vsub{font-size:13.5px;color:var(--muted);margin-top:6px}
+.meas{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;flex:none}
+.meas b{display:block;font-size:clamp(30px,5.5vw,48px);font-weight:600;line-height:1}.meas span{font-size:12px;color:var(--dim)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px}.kv+.kv{border-top:1px solid var(--line)}
+.kv i{color:var(--muted);font-style:normal}.kv b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.sides{display:flex;gap:8px;margin-top:12px}
+.side{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel2)}
+.side em{font-style:normal;display:block;font-size:10.5px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.side b{font-family:var(--mono);font-size:18px;display:block;margin-top:4px}
+.side.done{border-color:var(--ok)}.side.done b{color:var(--ok)}.side.over{border-color:var(--alarm)}.side.over b{color:var(--alarm)}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select{font-family:var(--mono);font-size:14px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.f5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px}.f1{margin-bottom:10px}
+@media(max-width:620px){.f5,.f3{grid-template-columns:1fr 1fr}}
+button{font-size:13.5px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--dim)}button.pri{background:var(--info);border-color:var(--info);color:#04223F;font-weight:600}
+button.amb{background:var(--amber);border-color:var(--amber);color:#2A1B02;font-weight:600}button.grn{background:var(--ok);border-color:var(--ok);color:#052E14;font-weight:600}
+button:disabled{opacity:.4;cursor:default}button.x{padding:2px 8px;font-size:11px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px}
+th{text-align:right;color:var(--dim);font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;padding:0 0 7px}
+th:first-child,td:first-child{text-align:left}td{padding:5px 0;border-top:1px solid var(--line);text-align:right}
+td.ok{color:var(--ok)}td.bad{color:var(--alarm)}td.warn{color:var(--amber)}td.info{color:var(--info)}
+.scroll{max-height:240px;overflow-y:auto}.note{font-size:12px;line-height:1.55;color:var(--dim);margin-top:10px}
+details{margin-top:12px}summary{cursor:pointer;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;padding:6px 0}
+.kalres{font-family:var(--mono);font-size:13px;background:var(--panel2);border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.7}
+.kalres b{color:var(--amber)}.kalres .w{color:var(--alarm)}
+.stat{display:flex;gap:18px;font-family:var(--mono);font-size:12.5px;color:var(--muted);flex-wrap:wrap;margin-top:8px}.stat b{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <b>Kromka stansiyasi — <span id="stName">KROMKA-01</span></b>
+  <div class="chips">
+    <span class="chip" id="picoChip"><span class="led" id="picoLed"></span><span id="picoTxt">Pico yo'q</span></span>
+    <span class="chip" id="mesChip">MES: —</span>
+    <span class="chip" id="uskChip">uskuna: —</span>
+    <span class="chip" id="vChip">tezlik: —</span>
+    <span class="chip" id="qChip">navbat: 0</span>
+    <span class="chip" id="setChip">sozlama: —</span>
+    <button class="chip" id="avBtn" style="font:inherit;font-size:11.5px;cursor:pointer" title="Avariya ovozini yoqish/o'chirish (lampa baribir yonadi, skaner ovozi o'zgarmaydi)">avariya ovozi: —</button>
+  </div>
+</header>
+
+<div id="alarmBar"><div><b id="alTxt">AVARIYA</b><small id="alSub"></small></div><button id="alStop">O'CHIRISH</button></div>
+
+<div class="verdict"><div class="vband" id="vband"></div>
+  <div class="vin"><div><div id="vtext">Pico ga ulanmoqda…</div><div id="vsub"></div></div>
+  <div class="meas"><b id="mVal">—</b><span>o'lchangan, mm</span></div></div></div>
+
+<div class="grid">
+  <div class="card"><h2>Joriy detal</h2>
+    <div class="kv"><i>Kod</i><b id="pCode">—</b></div><div class="kv"><i>Nomi</i><b id="pName">—</b></div><div class="kv"><i>Uzun · Kalta</i><b id="pDim">—</b></div>
+    <div class="sides"><div class="side" id="sL"><em>Uzun</em><b>0 / 0</b></div><div class="side" id="sW"><em>Kalta</em><b>0 / 0</b></div></div>
+    <div class="stat"><span>Shu detal: <b id="stN">0</b> ta</span><span>tarqoq <b id="stR">—</b></span></div>
+    <div class="btns"><button class="pri" id="conn">Pico ga ulanish</button><button id="reset">Detalni bekor qilish</button><button id="test">TEST</button></div>
+  </div>
+  <div class="card"><h2>QR / qo'lda kiritish</h2>
+    <div class="f1"><label for="qrIn">QR kod (skaner o'zi yozadi yoki qo'lda + Enter)</label><input id="qrIn" placeholder="A-1001" autocomplete="off"></div>
+    <div class="f3"><div><label for="mL">Uzun, mm</label><input id="mL" type="number"></div><div><label for="mW">Kalta, mm</label><input id="mW" type="number"></div>
+      <div><label for="mN">Tomonlar</label><select id="mN"><option value="2,2">2+2</option><option value="2,0">2 uzun</option><option value="0,2">2 kalta</option><option value="1,0">1 uzun</option></select></div></div>
+    <div class="btns"><button class="amb" id="load">Qo'lda yuklash</button><button id="sim">Sinov o'lchovi</button></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:12px"><h2>O'tkazishlar</h2>
+  <div class="scroll"><table><thead><tr><th>№</th><th>soat</th><th>detal</th><th>kutilgan</th><th>o'lchangan</th><th>farq</th><th>D1/D2</th><th>tezlik</th><th>natija</th></tr></thead><tbody id="log"></tbody></table></div>
+  <div class="btns"><button id="clr">Tozalash</button></div></div>
+
+<details><summary>Sozlamalar</summary><div class="card" style="margin-top:8px">
+  <div class="f5">
+    <div><label for="kD">D_eff, mm</label><input id="kD" type="number" step="0.01" value="2555"></div>
+    <div><label for="kV10">V_eff 10</label><input id="kV10" type="number" step="0.001" value="10"></div>
+    <div><label for="kV18">V_eff 18</label><input id="kV18" type="number" step="0.001" value="18"></div>
+    <div><label for="tDat">Datchik farqi ±</label><input id="tDat" type="number" step="0.1" value="12"></div>
+    <div><label for="tDet">Dopusk detal ±, mm</label><input id="tDet" type="number" step="0.1" value="3"></div>
+  </div>
+  <div class="f3">
+    <div><label for="kK1">K1 — datchik 1, ms</label><input id="kK1" type="number" step="0.001" value="0"></div>
+    <div><label for="kK2">K2 — datchik 2, ms</label><input id="kK2" type="number" step="0.001" value="0"></div>
+    <div><label for="kC">C — o'tish tuzatmasi, ms</label><input id="kC" type="number" step="0.001" value="0"></div>
+  </div>
+  <div class="f3">
+    <div><label for="kB1">B1 — datchik 1 siljishi, mm</label><input id="kB1" type="number" step="0.01" value="0"></div>
+    <div><label for="kB2">B2 — datchik 2 siljishi, mm</label><input id="kB2" type="number" step="0.01" value="0"></div>
+    <div><label for="sAO">Avariya signali</label><select id="sAO"><option value="0">yoniq</option><option value="1">o'chiq (sozlash uchun)</option></select></div>
+  </div>
+  <div class="f3">
+    <div><label for="kHQ">Skaner ohangi, Hz</label><input id="kHQ" type="number" step="50" min="200" max="8000" value="2500"></div>
+    <div><label for="kHA">Avariya ohangi, Hz</label><input id="kHA" type="number" step="50" min="200" max="8000" value="1500"></div>
+    <div><label for="sAV">Avariya ovozi</label><select id="sAV"><option value="1">yoniq</option><option value="0">o'chiq (faqat lampa)</option></select></div>
+  </div>
+  <div class="f2">
+    <div><label for="stIn">Stansiya</label><input id="stIn" value="KROMKA-01"></div>
+    <div><label for="mesUrl">MES URL</label><input id="mesUrl"></div>
+  </div>
+  <div class="btns"><button class="amb" id="saveSet">Saqlash va Pico ga yuborish</button><button id="loadSet">MES dan yuklash</button></div>
+  <div class="note">Sozlamalar har 60 soniyada MES dan tekshiriladi — MES da o'zgartirsangiz, stansiya o'zi qabul qilib Pico ga yuboradi.<br>
+  <b>Avariya o'chiq</b> bo'lsa lampa va sirena chalinmaydi, lekin hodisalar MES ga yoziladi.</div>
+</div></details>
+
+<details id="sinDet"><summary>Signal sinovi</summary><div class="card" style="margin-top:8px">
+  <div class="f3">
+    <div><label for="tHQ">Skaner ohangi, Hz</label><input id="tHQ" type="number" step="50" min="200" max="8000" value="2500"></div>
+    <div><label>&nbsp;</label><button class="grn" id="tQR" style="width:100%">Skaner signali</button></div>
+    <div><label>&nbsp;</label><button id="tTEST" style="width:100%">TEST (1 s)</button></div>
+  </div>
+  <div class="f3">
+    <div><label for="tHA">Avariya ohangi, Hz</label><input id="tHA" type="number" step="50" min="200" max="8000" value="1500"></div>
+    <div><label>&nbsp;</label><button class="amb" id="tAV" style="width:100%">Avariya signali</button></div>
+    <div><label>&nbsp;</label><button id="tSTOP" style="width:100%">To'xtatish</button></div>
+  </div>
+  <div class="f3">
+    <div><label>&nbsp;</label><button id="tAVov" style="width:100%">Avariya ovozi: —</button></div>
+    <div><label>&nbsp;</label><button id="tEkran" style="width:100%">Avariyali to'xtash ekrani</button></div>
+    <div><label>&nbsp;</label><button class="pri" id="tSaqla" style="width:100%">Ohanglarni saqlash</button></div>
+  </div>
+  <div class="f2" style="align-items:end">
+    <div><label><input type="checkbox" id="tSkan" style="width:auto;margin-right:8px">Skaner sinovi — o'qilgan kod faqat shu yerda ko'rinadi va signal chalinadi (detal yuklanmaydi)</label></div>
+    <div class="kalres" id="tKod" style="margin-top:0">Kod: —</div>
+  </div>
+  <div class="note">Ohangni o'zgartirib tugmani bosing — Pico darhol shu ohangda chaladi. Yoqqanini tanlagach <b>"Ohanglarni saqlash"</b> (MES va Pico xotirasiga).
+  Avariya ovozi o'chiq bo'lsa lampa baribir miltillaydi; skaner ovozi bunga bog'liq emas. Bu paneldagi sinovlar MES ga yozilmaydi.</div>
+</div></details>
+
+<details id="kalDet"><summary>Kalibrlash</summary><div class="card" style="margin-top:8px">
+  <div class="f2">
+    <div><label for="lref">Etalon uzunligi, mm — har guruhdan oldin o'zgartiring</label><input id="lref" type="number" step="0.1" value="2750"></div>
+    <div><label>&nbsp;</label><button class="grn" id="kalTog" style="width:100%">Kalibrlashni boshlash</button></div>
+  </div>
+  <div class="note">Reja: <b>4 xil uzunlik</b> (≈300, 1000, 2000, 2750) × <b>2 tezlik</b> × <b>5 marta</b> = 40 o'tkazish. Har guruh oldidan uzunlikni kiriting, keyin o'tkazing — tizim tezlikni o'zi taniydi.
+  Etalonni shtangensirkul bilan ±0.1 mm gacha o'lchang: L_ref xatosi to'g'ridan-to'g'ri natijaga o'tadi.
+  <b>B1/B2</b> uchun kamida 2 xil uzunlik, <b>C</b> va <b>K1/K2</b> uchun 2 uzunlik va ikkala tezlik kerak.
+  Hamma guruhni <b>bitta seansda</b> o'tkazing, oxirida bir marta "Qo'llash va saqlash". Nuqtalar sahifa yopilsa ham saqlanib qoladi.</div>
+  <div class="scroll" style="margin-top:10px;max-height:200px"><table><thead><tr><th>№</th><th>L_ref</th><th>rejim</th><th>t1, ms</th><th>t2, ms</th><th>Δt·mid, ms</th><th>hisob</th><th>xato</th><th></th></tr></thead><tbody id="kalBody"></tbody></table></div>
+  <div class="kalres" id="kalRes">Nuqta yo'q</div>
+  <div class="scroll" style="margin-top:10px;max-height:160px"><table><thead><tr><th>guruh</th><th>rejim</th><th>n</th><th>o'rtacha</th><th>σ</th><th>sist. xato</th></tr></thead><tbody id="kalGrp"></tbody></table></div>
+  <div class="btns"><button class="pri" id="kalApply" disabled>Qo'llash va saqlash</button><button id="kalClr">Nuqtalarni tozalash</button></div>
+</div></details>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const nv=(el,d)=>{const v=parseFloat(el.value);return isFinite(v)?v:d;};
+const P=new URLSearchParams(location.search);
+const API=()=>($('mesUrl').value.trim()||'').replace(/\/$/,'');
+const ST=()=>$('stIn').value.trim()||'KROMKA-01';
+const TOKEN=P.get('token')||'';
+const hdr=()=>{const h={'Content-Type':'application/json'};if(TOKEN)h['X-Station-Token']=TOKEN;return h;};
+
+let port=null,reader=null,writer=null,alive=false,rx='';
+let part=null,done=[0,0],partMeas=[];
+let navbat=[],log=[],seq=0,sending=false,setStamp=null;
+let kalibOn=false,kalPts=[],scanBuf='',scanT=0;
+
+function verdict(c,t,s){$('vband').className='vband'+(c?' '+c:'');$('vtext').textContent=t;$('vsub').textContent=s||'';}
+function chip(id,cls,txt){const e=$(id);e.textContent=txt;e.className='chip'+(cls?' '+cls:'');}
+function qChip(){chip('qChip',navbat.length>20?'bad':navbat.length?'wait':'','navbat: '+navbat.length);}
+function alarmUI(on,txt,sub){$('alarmBar').className=on?'on':'';if(txt)$('alTxt').textContent=txt;$('alSub').textContent=sub||'';}
+
+/* ---------- IndexedDB navbat ---------- */
+let idb=null;
+function idbOpen(){return new Promise(res=>{try{const r=indexedDB.open('stansiya_q',1);r.onupgradeneeded=()=>r.result.createObjectStore('q',{keyPath:'id'});r.onsuccess=()=>{idb=r.result;res();};r.onerror=()=>res();}catch(e){res();}});}
+function idbPut(ev){try{idb?.transaction('q','readwrite').objectStore('q').put(ev);}catch(e){}}
+function idbDel(id){try{idb?.transaction('q','readwrite').objectStore('q').delete(id);}catch(e){}}
+function idbAll(){return new Promise(res=>{try{const r=idb.transaction('q').objectStore('q').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>res([]);}catch(e){res([]);}});}
+
+/* ---------- Pico ---------- */
+// Pico qayta yuklanayotgan paytda port.open() javobsiz osilib qolishi mumkin — 8 s dan keyin voz kechamiz,
+// aks holda sahifa "ulanmoqda" da qotadi va avtomatik qayta urinish ham boshlanmaydi.
+function vaqtli(pr,ms){return Promise.race([pr,new Promise((_,rad)=>setTimeout(()=>rad(new Error('Pico javob bermadi ('+ms/1000+' s)')),ms))]);}
+async function openPort(p){
+  try{
+    port=p;
+    try{await vaqtli(port.open({baudRate:115200}),8000);}
+    catch(e){
+      // Oldingi aloqa uzilganda port Chrome da ochiq qolib ketgan bo'lsa — yopib, qayta ochamiz
+      if(e&&e.name==='InvalidStateError'){try{await port.close();}catch(_){}await vaqtli(port.open({baudRate:115200}),8000);}
+      else throw e;
+    }
+  }catch(e){
+    port=null;                      // ochilmadi — qayta urinish uchun bo'sh qoldiramiz
+    throw e;
+  }
+  alive=true;writer=port.writable.getWriter();
+  $('picoLed').className='led on';$('picoTxt').textContent='Pico ulangan';$('picoChip').className='chip ok';$('conn').textContent='Uzish';
+  verdict('','Tayyor','QR kodni skanerlang');
+  navigator.locks?.request('stansiya',()=>new Promise(()=>{}));
+  readLoop();setTimeout(()=>{sendSet();send('HOLAT');},600);
+  picoHolat(1);
+}
+// Pico ulangan/uzilgan — MES jurnali uchun (Pico ga tok kelmasa yoki kabel uzilsa shu qoladi)
+let picoOxirgi=null;
+function picoHolat(h){if(picoOxirgi===h)return;picoOxirgi=h;queue({type:'pico',holat:h});}
+// Yurak urishi: Pico shu kelib turgancha stansiya bor deb biladi; 3 s kelmasa o'lchovlarni o'zida yig'adi
+setInterval(()=>{if(writer)send('HB');},1000);
+const PICO_VID=0x2E8A;              // Raspberry Pi — Pico USB CDC
+function piconiTanla(ports){
+  return ports.find(x=>{try{return x.getInfo().usbVendorId===PICO_VID;}catch(e){return false;}})||ports[0]||null;
+}
+async function autoConnect(){
+  if(!('serial' in navigator)||port)return false;
+  try{
+    const p=piconiTanla(await navigator.serial.getPorts());
+    if(p){await openPort(p);return true;}
+  }catch(e){port=null;}
+  return false;
+}
+async function connect(){
+  if(!('serial' in navigator)){verdict('bad','WebSerial yo\'q','Chrome/Edge, HTTPS yoki localhost orqali oching');return;}
+  try{await openPort(await navigator.serial.requestPort());}catch(e){verdict('bad','Ulanmadi',String(e.message||e));}
+}
+async function disconnect(){
+  alive=false;await yopPort();picoHolat(0);
+  $('picoLed').className='led';$('picoTxt').textContent='Pico yo\'q';$('picoChip').className='chip';$('conn').textContent='Pico ga ulanish';
+}
+async function send(cmd){if(!writer)return;try{await writer.write(new TextEncoder().encode(cmd+'\n'));}catch(e){}}
+function kalQiymat(){return{D:nv($('kD'),2555),V10:nv($('kV10'),10),V18:nv($('kV18'),18),K1:nv($('kK1'),0),K2:nv($('kK2'),0),B1:nv($('kB1'),0),B2:nv($('kB2'),0),C:nv($('kC'),0),TD:nv($('tDat'),12),
+  AO:$('sAO').value==='1'?1:0,HQ:nv($('kHQ'),2500),HA:nv($('kHA'),1500),AV:$('sAV').value==='0'?0:1};}
+function sendSet(){send('SET '+Object.entries(kalQiymat()).map(([k,v])=>k+'='+v).join(' '));}
+async function readLoop(){
+  const dec=new TextDecoderStream();port.readable.pipeTo(dec.writable).catch(()=>{});reader=dec.readable.getReader();
+  try{while(alive){const{value,done}=await reader.read();if(done)break;rx+=value;let i;
+    while((i=rx.indexOf('\n'))>=0){const line=rx.slice(0,i).trim();rx=rx.slice(i+1);if(line.startsWith('{'))handle(line);}}}catch(e){}
+  if(alive){
+    // Aloqa uzildi (Pico qayta yuklandi, USB tebrandi). Portni to'liq yopib, o'zgaruvchilarni
+    // tozalaymiz — aks holda port "ochiq" qolib, autoConnect uni band deb o'tkazib yuboradi.
+    alive=false;await yopPort();picoHolat(0);
+    $('picoLed').className='led';$('picoChip').className='chip bad';$('picoTxt').textContent='Aloqa uzildi';$('conn').textContent='Pico ga ulanish';
+    setTimeout(autoConnect,2000);
+  }
+}
+async function yopPort(){
+  try{await reader?.cancel();}catch(e){}try{writer?.releaseLock();}catch(e){}try{await port?.close();}catch(e){}
+  port=reader=writer=null;
+}
+
+/* ---------- Pico hodisalari ---------- */
+function handle(line){
+  let m;try{m=JSON.parse(line);}catch(e){return;}
+  if(m.eski_ms!=null){eskiHodisa(m);return;}
+  switch(m.ev){
+    case 'yigilgan':if(m.n||m.yoqolgan)verdict('warn','Pico xotirasidan '+m.n+' ta yozuv olindi',
+      'stansiya ulanmagan paytda yig\'ilgan'+(m.yoqolgan?' · '+m.yoqolgan+' tasi xotira to\'lib yo\'qolgan':''));break;
+    case 'boot':sendSet();verdict('','Pico tayyor','QR kodni skanerlang');break;
+    case 'uskuna':chip('uskChip',m.holat?'ok':'','uskuna: '+(m.holat?'ishlayapti':'to\'xtagan'));queue({type:'uskuna',holat:m.holat});break;
+    case 'tezlik':chip('vChip','info','tezlik: '+m.v+' m/min');queue({type:'tezlik',v:m.v});break;
+    case 'holat':if(m.alarm!==undefined)alarmUI(!!m.alarm);if(m.ver)$('picoTxt').textContent='Pico v'+m.ver;
+      if(m.uskuna!==undefined)chip('uskChip',m.uskuna?'ok':'','uskuna: '+(m.uskuna?'ishlayapti':'to\'xtagan'));
+      if(m.v_nom!==undefined)chip('vChip','info','tezlik: '+m.v_nom+' m/min');break;
+    case 'olchov':onOlchov(m);break;
+    case 'kalib':if(kalibOn){kalPts.push({...m,L_ref:nv($('lref'),0)});renderKal();}break;
+    case 'ogoh':onOgoh(m);break;
+    case 'avariya_toxtash':onToxtash(m);break;
+  }
+}
+// Stansiya ulanmagan paytda Pico o'zida yig'gan hodisa: ekranga signal bermaymiz, faqat MES ga
+// asl vaqti bilan (hozir − eski_ms) yozamiz va jurnalga "xotiradan" deb qo'shamiz.
+function eskiHodisa(m){
+  const ts=new Date(Date.now()-m.eski_ms);
+  if(m.ev==='olchov'){
+    const rec={type:'olchov',qr:null,name:null,expected_mm:null,measured_mm:m.L,delta_mm:null,side:null,verdict:'SKANERSIZ',
+      pico_kod:m.kod,suspect:m.shubha,L1:m.L1,L2:m.L2,d1_us:m.d1,d2_us:m.d2,v_meas:m.v_olch,v_nom:m.v_nom,ish_ms:m.ish_ms,n:m.n,xotiradan:1};
+    queue(rec,ts);log.unshift({...rec,ts,cls:'warn'});renderLog();
+  }else if(m.ev==='uskuna')queue({type:'uskuna',holat:m.holat,xotiradan:1},ts);
+  else if(m.ev==='ogoh')queue({type:'ogoh',ch:m.ch,sabab:m.sabab,q:m.q,xotiradan:1},ts);
+  else if(m.ev==='avariya_toxtash'){queue({type:'avariya_toxtash',d1:m.d1,d2:m.d2,oraliq:m.oraliq,birga:m.birga,xotiradan:1},ts);
+    log.unshift({type:'avariya_toxtash',ts,cls:'bad',matn:toxtashMatn(m)+' (xotiradan)'});renderLog();}
+}
+function onOlchov(m){
+  let verd='SKANERSIZ',side=null,delta=null,cls='warn',exp=null;
+  if(part){const c=[{n:'uzun',v:part.L,i:0},{n:'kalta',v:part.W,i:1}].map(x=>({...x,d:Math.abs(m.L-x.v)})).sort((a,b)=>a.d-b.d)[0];
+    exp=c.v;delta=c.d;
+    if(c.d<=nv($('tDet'),3)){verd='MOS';side=c.n;cls='ok';done[c.i]++;partMeas.push(m.L);}else{verd='NOMOS';cls='bad';send('ALARM');}}
+  if(m.kod!=='OK')cls='bad';
+  $('mVal').textContent=m.L.toFixed(1);
+  const sub=[];if(exp!==null)sub.push('kutilgan '+exp+', farq '+delta.toFixed(1)+' mm');if(side)sub.push(side+' tomon');
+  sub.push('D1 '+(m.L1??'—')+' / D2 '+(m.L2??'—'));if(m.shubha)sub.push('shubhali datchik '+m.shubha);if(m.v_olch)sub.push(m.v_olch+' m/min');if(m.navbat)sub.push('yo\'lda '+m.navbat+' ta detal');
+  verdict(cls,verd==='MOS'?'MOS — '+(side||''):verd==='NOMOS'?'NOMOS O\'LCHAM':'Detal skanerlanmagan',sub.join(' · '));
+  if(verd==='NOMOS')alarmUI(true,'NOMOS O\'LCHAM','o\'lchangan '+m.L.toFixed(1)+' mm, kutilgan '+exp+' mm');
+  if(m.kod!=='OK')alarmUI(true,'DATCHIK: '+m.kod,m.shubha?'shubhali datchik '+m.shubha:'');
+  renderSides();
+  if(part&&done[0]>=part.need[0]&&done[1]>=part.need[1])verdict('ok','DETAL TAYYOR','keyingi QR kodni skanerlang');
+  const rec={type:'olchov',qr:part?.code||null,name:part?.name||null,expected_mm:exp,measured_mm:m.L,delta_mm:delta,side,verdict:verd,
+    pico_kod:m.kod,suspect:m.shubha,L1:m.L1,L2:m.L2,d1_us:m.d1,d2_us:m.d2,v_meas:m.v_olch,v_nom:m.v_nom,ish_ms:m.ish_ms,n:m.n};
+  log.unshift({...rec,ts:new Date(),cls});queue(rec);renderLog();renderStat();
+}
+// Stanok yo'lda detal bor paytda to'xtadi — o'lchov bekor, avariya (Pico o'zi boshlaydi)
+function toxtashMatn(m){const j=[];
+  if(m.d1&&m.d2&&m.birga)j.push('uzun detal D1 va D2 da');else{if(m.d1)j.push('detal D1 da (kirishda)');if(m.d2)j.push('detal D2 da');}
+  if(m.oraliq)j.push(m.oraliq+' ta detal datchiklar orasida');return j.join(', ');}
+function onToxtash(m){const t=toxtashMatn(m);$('mVal').textContent='—';
+  alarmUI(true,'AVARIYALI TO\'XTASH',t+' — o\'lchov bekor qilindi');verdict('bad','Avariyali to\'xtash',t+' — o\'lchov bekor');
+  queue({type:'avariya_toxtash',d1:m.d1,d2:m.d2,oraliq:m.oraliq,birga:m.birga});log.unshift({type:'avariya_toxtash',ts:new Date(),cls:'bad',matn:t});renderLog();
+}
+function onOgoh(m){
+  const t={javob_yoq:'javob bermayapti',yopishib_qolgan:'yopishib qolgan (chang?)',iflos:'ifloslangan — linzani tozalang',tezlik_nomuvofiq:'tezlik nomuvofiq — tezlik simini tekshiring'}[m.sabab]||m.sabab;
+  alarmUI(true,'DATCHIK '+(m.ch||'')+': '+t,'');verdict('bad','Ogohlantirish','datchik '+m.ch+' — '+t);
+  queue({type:'ogoh',ch:m.ch,sabab:m.sabab,q:m.q});log.unshift({type:'ogoh',ts:new Date(),cls:'bad',sabab:t,ch:m.ch});renderLog();
+}
+
+/* ---------- detal ---------- */
+async function loadByQR(code){
+  code=code.replace(/^[~`]/,'').trim().toUpperCase();if(!code)return;
+  if($('tSkan').checked){$('tKod').textContent='Kod: '+code+'  ·  '+new Date().toLocaleTimeString('uz');send('QR');return;}
+  $('qrIn').value=code;
+  if(!API()){verdict('warn','MES URL yo\'q','sozlamalarda kiriting yoki qo\'lda yuklang');return;}
+  try{const r=await fetch(API()+'/api/part?qr='+encodeURIComponent(code),{headers:hdr()});
+    if(r.ok){const p=await r.json();setPart({code:p.code,name:p.name,L:p.L,W:p.W,need:(p.need||'2,2').split(',').map(Number)});send('QR');}
+    else{verdict('warn','Kod topilmadi: '+code,'qo\'lda o\'lchamlarni kiritib yuklang');$('mL').focus();}
+  }catch(e){verdict('bad','MES bilan aloqa yo\'q',String(e.message||e));}
+}
+function setPart(p){part=p;done=[0,0];partMeas=[];$('pCode').textContent=p.code;$('pName').textContent=p.name||'—';$('pDim').textContent=p.L+' · '+p.W;renderSides();renderStat();verdict('','Detal yuklandi: '+p.code,'o\'tkazishni kuting');}
+function renderSides(){for(const[id,i]of[['sL',0],['sW',1]]){const el=$(id),need=part?part.need[i]:0,d=part?done[i]:0;el.querySelector('b').textContent=d+' / '+need;el.className='side'+(d>need?' over':(need&&d>=need?' done':''));}}
+function renderStat(){$('stN').textContent=partMeas.length;$('stR').textContent=partMeas.length>=2?'±'+((Math.max(...partMeas)-Math.min(...partMeas))/2).toFixed(1)+' mm':'—';}
+
+document.addEventListener('keydown',e=>{
+  const inInput=['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName);const now=performance.now();
+  if(now-scanT>120)scanBuf='';scanT=now;
+  if(e.key==='Enter'){if(e.target===$('qrIn')){loadByQR($('qrIn').value);e.preventDefault();scanBuf='';return;}
+    if(scanBuf.length>=3&&!inInput)loadByQR(scanBuf);scanBuf='';return;}
+  if(e.key.length===1&&!inInput)scanBuf+=e.key;
+});
+
+/* ---------- MES ---------- */
+function queue(ev,ts){const rec={id:ST()+'-'+String(++seq).padStart(6,'0')+'-'+Date.now().toString(36),station:ST(),ts:(ts||new Date()).toISOString(),...ev};navbat.push(rec);idbPut(rec);qChip();flush();}
+async function flush(){
+  if(!API()||sending||!navbat.length)return;sending=true;const pkt=navbat.slice(0,25);
+  try{const r=await fetch(API()+'/api/events',{method:'POST',headers:hdr(),body:JSON.stringify({events:pkt})});
+    if(r.ok){const{ack=[]}=await r.json();const s=new Set(ack);navbat=navbat.filter(x=>!s.has(x.id));ack.forEach(idbDel);chip('mesChip','ok','MES: ulangan');}
+    else chip('mesChip','bad','MES: xato '+r.status);
+  }catch(e){chip('mesChip','bad','MES: tarmoq yo\'q');}
+  sending=false;qChip();
+}
+setInterval(flush,3000);
+
+function applySettings(s){
+  if(s.kal){$('kD').value=s.kal.D??2555;$('kV10').value=s.kal.V10??10;$('kV18').value=s.kal.V18??18;
+    $('kK1').value=s.kal.K1??s.kal.K??0;$('kK2').value=s.kal.K2??s.kal.K??0;$('kB1').value=s.kal.B1??0;$('kB2').value=s.kal.B2??0;$('kC').value=s.kal.C??0;$('tDat').value=s.kal.TD??12;
+    $('sAO').value=s.kal.AO?'1':'0';
+    $('kHQ').value=s.kal.HQ??2500;$('kHA').value=s.kal.HA??1500;$('sAV').value=(s.kal.AV??1)?'1':'0';avChip();}
+  if(s.tol)$('tDet').value=s.tol.detal??3;
+}
+async function syncSettings(force){
+  if(!API())return;
+  try{const r=await fetch(API()+'/api/settings?station='+encodeURIComponent(ST())+'&pico='+(port?1:0),{headers:hdr()});const s=await r.json();
+    chip('mesChip','ok','MES: ulangan');
+    if(force||(s.updated&&s.updated!==setStamp)){applySettings(s);setStamp=s.updated||null;sendSet();chip('setChip','info','sozlama: '+(s.updated?s.updated.slice(11,16):'yuklandi'));}
+  }catch(e){chip('mesChip','bad','MES: tarmoq yo\'q');}
+}
+setInterval(()=>syncSettings(false),60000);
+async function saveSettings(){
+  const body={station:ST(),kal:kalQiymat(),tol:{detal:nv($('tDet'),3)}};
+  sendSet();if(!API()){verdict('warn','Pico ga yuborildi','MES URL yo\'q');return;}
+  try{const r=await fetch(API()+'/api/settings',{method:'POST',headers:hdr(),body:JSON.stringify(body)});const j=await r.json();setStamp=j.updated||setStamp;verdict('ok','Sozlamalar saqlandi','MES va Pico yangilandi');chip('setChip','info','sozlama: saqlandi');}
+  catch(e){verdict('bad','MES ga saqlanmadi',String(e.message||e));}
+}
+
+/* ---------- kalibrlash: eng kichik kvadratlar ----------
+   Model:  t_i    = (L + B_i)/v + k_i   B_i — datchikning UZUNLIK siljishi (nur kengligi), mm
+                                        k_i — datchikning VAQT kechikishi, ms
+           dt_mid = D/v + C             detal markazining D1 dan D2 gacha vaqti
+   Chiziqli shakl:  L_ref*dt_mid = D*t_i - B_i*dt_mid - a_i + C*L_ref,   a_i = D*k_i - B_i*C
+   Noma'lumlar: D, B1, B2, a1, a2, C.  Vaqtlar ms da.
+   Nega B: 2026-09-17 o'lchovida D1−D2 farqi 10 m/min da 35 ms, 18 da 21 ms — vaqtda
+   doimiy EMAS, lekin mm da ikkalasida ≈6 mm. Ya'ni asosiy farq uzunlik siljishi.
+   Ajratish shartlari:
+     B_i  — kamida 2 xil uzunlik (1 uzunlikda B*dt_mid ustuni D*t ga proporsional)
+     C    — 2 uzunlik va 2 tezlik (aks holda D yoki a bilan qo'shilib ketadi)
+     k_i  — 2 uzunlik va 2 tezlik; faqat qoldiqni sezilarli kamaytirsa qoldiriladi
+*/
+function gauss(A,b){
+  const n=b.length,M=A.map((r,i)=>r.concat([b[i]]));
+  let nrm=0;for(const r of A)for(const v of r)nrm=Math.max(nrm,Math.abs(v));
+  const eps=1e-12*(nrm||1);
+  for(let c=0;c<n;c++){
+    let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;
+    if(!isFinite(M[p][c])||Math.abs(M[p][c])<=eps)return null;
+    const q=M[c];M[c]=M[p];M[p]=q;
+    for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c]/M[c][c];for(let k=c;k<=n;k++)M[r][k]-=f*M[c][k];}
+  }
+  return M.map((r,i)=>r[n]/r[i]);   // r — qator, r[i] — uning diagonal elementi
+}
+function lsq(rows,m){
+  // Ustunlar kattaligi juda farq qiladi (t ~ 16000 ms, birlik ustun ~ 1). Normal
+  // tenglamalar buni kvadratga ko'taradi va yechim aniqligi yo'qoladi — shuning
+  // uchun har ustun o'z o'rtacha kvadratiga bo'linadi, yechim oxirida qaytariladi.
+  const sc=new Array(m).fill(0);
+  for(const row of rows)for(let i=0;i<m;i++)sc[i]+=row.x[i]*row.x[i];
+  for(let i=0;i<m;i++)sc[i]=Math.sqrt(sc[i]/rows.length)||1;
+  const A=Array.from({length:m},()=>new Array(m).fill(0)),b=new Array(m).fill(0);
+  for(const row of rows){const y=row.y;
+    for(let i=0;i<m;i++){const xi=row.x[i]/sc[i];b[i]+=xi*y;
+      for(let j=0;j<m;j++)A[i][j]+=xi*row.x[j]/sc[j];}}
+  const s=gauss(A,b);
+  return s?s.map((v,i)=>v/sc[i]):null;
+}
+const ortacha=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const kvOrt=(a,dof)=>a.length?Math.sqrt(a.reduce((x,y)=>x+y*y,0)/Math.max(1,a.length-(dof||0))):null;
+
+function kalTayyor(){
+  return kalPts.map((p,i)=>{
+    const t1=(p.t1||0)/1000,t2=(p.t2||0)/1000,dt=(p.dt||0)/1000;
+    const dtm=p.dtm?p.dtm/1000:(t1>0&&t2>0?dt+(t2-t1)/2:dt);
+    return{i,L_ref:+p.L_ref||0,S:p.S,t1,t2,dtm};
+  }).filter(p=>p.L_ref>0&&p.dtm>0&&(p.t1>0||p.t2>0));
+}
+// ustunlar: 0 D · 1 B1 · 2 B2 · 3 a1 · 4 a2 · 5 C.  tur — qaysilari ishlatiladi
+function kalFit(pts,tur){
+  const ust=[0].concat(tur.B?[1,2]:[],tur.K?[3,4]:[],tur.C?[5]:[]),m=ust.length,rows=[];
+  for(const p of pts){
+    const y=p.L_ref*p.dtm;
+    if(p.t1>0){const x=[p.t1,-p.dtm,0,-1,0,p.L_ref];rows.push({x:ust.map(j=>x[j]),y});}
+    if(p.t2>0){const x=[p.t2,0,-p.dtm,0,-1,p.L_ref];rows.push({x:ust.map(j=>x[j]),y});}
+  }
+  if(rows.length<m+2)return null;
+  const s=lsq(rows,m);
+  if(!s||!s.every(isFinite))return null;
+  const q=[0,0,0,0,0,0];ust.forEach((j,i)=>q[j]=s[i]);
+  const D=q[0],b1=q[1],b2=q[2],C=q[5],k1=(q[3]+b1*C)/D,k2=(q[4]+b2*C)/D;
+  if(!(D>0)||![k1,k2].every(isFinite))return null;
+  // Fizik chegara: B — nur kengligi, bir necha mm; k va C — javob kechikishi, bir necha ms.
+  // Bundan chiqsa — yechim shovqinga moslashib ketgan, soddaroq model ishonchliroq.
+  if(Math.abs(b1)>30||Math.abs(b2)>30||Math.abs(k1)>5||Math.abs(k2)>5||Math.abs(C)>10)return null;
+  return{D,b1,b2,k1,k2,C,m,tur};
+}
+function kalZaxira(pts){                       // 1 xil uzunlik — faqat D
+  const v=[];for(const p of pts){if(p.t1>0)v.push(p.L_ref*p.dtm/p.t1);if(p.t2>0)v.push(p.L_ref*p.dtm/p.t2);}
+  return{D:ortacha(v),b1:0,b2:0,k1:0,k2:0,C:0,m:1,tur:{}};
+}
+function kalModel(pts,nLens,nTez){
+  if(nLens<2)return kalZaxira(pts);
+  if(nTez<2)return kalFit(pts,{B:1})||kalZaxira(pts);
+  const asos=kalFit(pts,{B:1,C:1})||kalFit(pts,{B:1});
+  if(!asos)return kalZaxira(pts);
+  // K1/K2 faqat qoldiq tarqoqligini kamida 10% kamaytirsa qo'shiladi
+  const toliq=kalFit(pts,{B:1,C:1,K:1});
+  if(toliq){
+    const sd=f=>{kalQoldiq(pts,f);return kvOrt(pts.map(p=>p.err).filter(x=>x!=null),f.m)||0;};
+    if(sd(toliq)<0.9*sd(asos))return toliq;
+  }
+  return asos;
+}
+function kalQoldiq(pts,f){
+  for(const p of pts){
+    const dv=p.dtm-f.C;
+    p.v=dv>0?f.D/dv:null;                      // mm/ms
+    p.L1=(p.t1>0&&p.v)?p.v*(p.t1-f.k1)-f.b1:null;
+    p.L2=(p.t2>0&&p.v)?p.v*(p.t2-f.k2)-f.b2:null;
+    const a=[p.L1,p.L2].filter(x=>x!=null);
+    p.Lfit=a.length?ortacha(a):null;
+    p.err=p.Lfit!=null?p.Lfit-p.L_ref:null;
+    p.dif=(p.L1!=null&&p.L2!=null)?p.L1-p.L2:null;
+  }
+}
+function kalHisob(){
+  const hammasi=kalTayyor();
+  if(!hammasi.length)return null;
+  const lens=[...new Set(hammasi.map(p=>p.L_ref))].sort((a,b)=>a-b);
+  const tezliklar=[...new Set(hammasi.map(p=>p.S))].sort((a,b)=>a-b);
+  let ish=hammasi.slice(),chet=[],f=null;
+  for(let it=0;it<3;it++){
+    f=kalModel(ish,lens.length,tezliklar.length);
+    kalQoldiq(ish,f);
+    const e=ish.map(p=>p.err).filter(x=>x!=null);
+    if(it===2||e.length<=f.m+3)break;
+    const sd=kvOrt(e,f.m);
+    const cheg=Math.max(3*sd,0.5);             // 0.5 mm pastki chegara — yaxshi nuqtani tashlamaslik uchun
+    const qoldi=ish.filter(p=>p.err==null||Math.abs(p.err)<=cheg);
+    if(qoldi.length===ish.length||qoldi.length<f.m+3)break;
+    chet=chet.concat(ish.filter(p=>qoldi.indexOf(p)<0));
+    ish=qoldi;
+  }
+  kalQoldiq(hammasi,f);                        // jadvalda hamma nuqta ko'rinsin
+  for(const p of chet)p.chet=1;
+
+  const e=ish.map(p=>p.err).filter(x=>x!=null);
+  const sd=kvOrt(e,f.m)||0;                                              // qoldiq tarqoqlik, mm
+  const maxErr=e.length?Math.max.apply(null,e.map(Math.abs)):0;
+  const difs=ish.map(p=>p.dif).filter(x=>x!=null);
+  // L1−L2 ning doimiy qismi (K1≠K2 hali ajratilmagan bo'lsa) shovqin emas — faqat o'rtachadan tebranish olinadi
+  const difOrt=ortacha(difs);
+  const difSd=difs.length>1?kvOrt(difs.map(x=>x-difOrt),1):null;
+  const sdDat=difSd!=null?difSd/2:null;                                   // datchik shovqinining o'rtachaga hissasi
+  const sdTez=sdDat!=null?Math.sqrt(Math.max(0,sd*sd-sdDat*sdDat)):null; // qolgani — tezlik tebranishi
+  const v10=ish.filter(p=>p.S===10&&p.v).map(p=>p.v*60),v18=ish.filter(p=>p.S===18&&p.v).map(p=>p.v*60);
+
+  const guruh={};
+  for(const p of ish){const k=p.L_ref+'@'+p.S;(guruh[k]=guruh[k]||{L_ref:p.L_ref,S:p.S,v:[]}).v.push(p.Lfit);}
+  const grp=Object.values(guruh).map(g=>{const m=ortacha(g.v);
+    return{L_ref:g.L_ref,S:g.S,n:g.v.length,mean:m,sd:g.v.length>1?kvOrt(g.v.map(x=>x-m),1):null};})
+    .sort((a,b)=>a.L_ref-b.L_ref||a.S-b.S);
+
+  return{D:f.D,b1:f.b1,b2:f.b2,k1:f.k1,k2:f.k2,C:f.C,tur:f.tur,V10:ortacha(v10),V18:ortacha(v18),
+    n10:v10.length,n18:v18.length,nLens:lens.length,nTez:tezliklar.length,
+    pts:hammasi,ish:ish,chet:chet,sd:sd,sd2:2*sd,maxErr:maxErr,sdDat:sdDat,sdTez:sdTez,difOrt:difOrt,difSd:difSd,grp:grp};
+}
+// Nuqtalar brauzerda saqlanadi — sahifa yangilansa yoki Chrome yopilsa yo'qolmasin
+function kalSaqla(){try{localStorage.setItem('kalPts',JSON.stringify(kalPts));localStorage.setItem('lref',$('lref').value);}catch(e){}}
+function kalYukla(){
+  try{const s=JSON.parse(localStorage.getItem('kalPts')||'[]');if(Array.isArray(s))kalPts=s;const l=localStorage.getItem('lref');if(l)$('lref').value=l;}catch(e){}
+  // bir martalik import: stansiya.html#kal=[...]  (tiklash/tozalash uchun — mavjud nuqtalar o'rniga yoziladi)
+  if(location.hash.startsWith('#kal=')){try{const s=JSON.parse(decodeURIComponent(location.hash.slice(5)));if(Array.isArray(s))kalPts=s;}catch(e){}
+    history.replaceState(null,'',location.pathname+location.search);}
+}
+function renderKal(){
+  kalSaqla();
+  const r=kalHisob();
+  $('kalBody').innerHTML=kalPts.length?kalPts.map((p,i)=>{const f=r&&r.pts.find(x=>x.i===i);
+    const t1=(p.t1||0)/1000,t2=(p.t2||0)/1000,dt=(p.dt||0)/1000;
+    const dtm=p.dtm?p.dtm/1000:(t1>0&&t2>0?dt+(t2-t1)/2:dt);
+    return`<tr${f&&f.chet?' style="opacity:.45"':''}><td>${i+1}</td><td>${p.L_ref}</td><td>${p.S}</td>`+
+      `<td>${t1?t1.toFixed(1):'—'}</td><td>${t2?t2.toFixed(1):'—'}</td><td>${dtm.toFixed(1)}</td>`+
+      `<td>${f&&f.Lfit!=null?f.Lfit.toFixed(2):'—'}</td>`+
+      `<td class="${f&&f.err!=null&&Math.abs(f.err)>0.5?'warn':'ok'}">${f&&f.err!=null?(f.err>=0?'+':'')+f.err.toFixed(2)+(f.chet?' ⊘':''):'—'}</td>`+
+      `<td><button class="x" data-i="${i}">×</button></td></tr>`;}).join('')
+    :'<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:14px 0">Nuqta yo\'q</td></tr>';
+  document.querySelectorAll('#kalBody button').forEach(b=>b.onclick=()=>{kalPts.splice(+b.dataset.i,1);renderKal();});
+  if(!r){$('kalRes').textContent='Nuqta yo\'q';$('kalGrp').innerHTML='';$('kalApply').disabled=true;return;}
+
+  const kam=[];
+  if(r.nLens<2)kam.push('B1/B2 uchun kamida 2 xil uzunlik kerak — hozircha faqat D');
+  if(r.nTez<2)kam.push('C va K uchun ikkala tezlik (10 va 18) kerak');
+  if(r.ish.length<20)kam.push('nuqta kam ('+r.ish.length+') — reja bo\'yicha 40 ta');
+  // 1 xil uzunlikda D aynan shu nuqtalarga moslanadi — xato o'z-o'zidan kichik chiqadi, bu hali aniqlik emas
+  const hukm=kam.length?['w','±'+r.sd2.toFixed(2)+' mm — DASTLABKI, ma\'lumot yetarli emas']
+    :r.sd2<=0.5?['ok','±0.5 mm — MAQSADGA YETILDI']
+    :r.sd2<=1?['w','±'+r.sd2.toFixed(2)+' mm — 0.5 mm ga yetmadi']
+    :['w','±'+r.sd2.toFixed(2)+' mm — tarqoqlik katta'];
+  // Datchik farqi chegarasi L1−L2 ning haqiqiy tarqalishidan: doimiy siljish + 4σ
+  const tdTavsiya=r.difSd!=null?Math.max(1,Math.ceil((Math.abs(r.difOrt)+4*r.difSd)*2)/2):null;
+  $('kalRes').innerHTML=
+    `D_eff = <b>${r.D.toFixed(2)} mm</b> · B1 = <b>${r.b1.toFixed(2)} mm</b> · B2 = <b>${r.b2.toFixed(2)} mm</b>${r.tur.B?'':' <span class="w">(B ajratilmadi)</span>'}<br>`+
+    `K1 = <b>${r.k1.toFixed(3)} ms</b> · K2 = <b>${r.k2.toFixed(3)} ms</b>${r.tur.K?'':' <span class="w">(K ishlatilmadi)</span>'} · C = <b>${r.C.toFixed(3)} ms</b>${r.tur.C?'':' <span class="w">(C ajratilmadi)</span>'}<br>`+
+    `V_eff 10 = <b>${r.V10?r.V10.toFixed(3):'—'}</b> (${r.n10}) · V_eff 18 = <b>${r.V18?r.V18.toFixed(3):'—'}</b> (${r.n18})<br>`+
+    `Nuqta: ${r.ish.length}${r.chet.length?' (+'+r.chet.length+' chetlangan ⊘)':''} · uzunlik: ${r.nLens} · tezlik: ${r.nTez}<br>`+
+    `Tarqoqlik σ = <b>${r.sd.toFixed(3)} mm</b> · eng katta xato ${r.maxErr.toFixed(2)} mm<br>`+
+    (r.sdDat!=null?`Shundan: datchiklar mustaqil <b>${r.sdDat.toFixed(3)}</b> · umumiy (tezlik) <b>${r.sdTez.toFixed(3)}</b> mm<br>`:'')+
+    (r.difOrt!=null?`D1 − D2 farqi: o'rtacha <b>${(r.difOrt>=0?'+':'')+r.difOrt.toFixed(2)} mm</b>${r.difSd!=null?' · σ '+r.difSd.toFixed(2)+' mm':''}${Math.abs(r.difOrt)>1&&!r.tur.B?' <span class="w">(B1/B2 hali ajratilmagan)</span>':''}<br>`:'')+
+    `<span class="${hukm[0]}">2σ (95%) = ${hukm[1]}</span>`+
+    (kam.length?`<br><span class="w">${kam.join(' · ')}</span>`:'')+
+    `<br>Tavsiya: dopusk detal ± <b>${Math.max(0.5,Math.ceil(r.sd2*2)/2).toFixed(1)} mm</b>${tdTavsiya!=null?` · datchik farqi ± <b>${tdTavsiya.toFixed(1)} mm</b>`:''}`;
+  $('kalGrp').innerHTML=r.grp.map(g=>`<tr><td>${g.L_ref} mm</td><td>${g.S}</td><td>${g.n}</td><td>${g.mean.toFixed(2)}</td>`+
+    `<td class="${g.sd!=null&&g.sd>0.35?'warn':'ok'}">${g.sd!=null?g.sd.toFixed(3):'—'}</td>`+
+    `<td class="${Math.abs(g.mean-g.L_ref)>0.3?'warn':'ok'}">${(g.mean-g.L_ref>=0?'+':'')+(g.mean-g.L_ref).toFixed(2)}</td></tr>`).join('');
+  $('kalApply').disabled=r.nLens<2;            // 1 uzunlikda faqat D — qo'llash erta
+}
+$('kalTog').onclick=()=>{kalibOn=!kalibOn;send('KALIB '+(kalibOn?1:0));$('kalTog').textContent=kalibOn?'Kalibrlashni tugatish':'Kalibrlashni boshlash';$('kalTog').className=kalibOn?'':'grn';
+  verdict(kalibOn?'warn':'',kalibOn?'KALIBRLASH REJIMI':'Kalibrlash o\'chirildi',kalibOn?'L_ref = '+$('lref').value+' mm — etalonni o\'tkazing':'');};
+$('lref').oninput=()=>{kalSaqla();if(kalibOn)verdict('warn','KALIBRLASH REJIMI','L_ref = '+$('lref').value+' mm — etalonni o\'tkazing');};
+$('kalApply').onclick=()=>{const r=kalHisob();if(!r)return;
+  $('kD').value=r.D.toFixed(2);$('kK1').value=r.k1.toFixed(3);$('kK2').value=r.k2.toFixed(3);$('kB1').value=r.b1.toFixed(2);$('kB2').value=r.b2.toFixed(2);$('kC').value=r.C.toFixed(3);
+  if(r.V10)$('kV10').value=r.V10.toFixed(3);if(r.V18)$('kV18').value=r.V18.toFixed(3);
+  saveSettings();if(kalibOn){kalibOn=false;send('KALIB 0');$('kalTog').textContent='Kalibrlashni boshlash';$('kalTog').className='grn';}};
+$('kalClr').onclick=()=>{kalPts=[];renderKal();};
+/* ---------- jurnal ---------- */
+function renderLog(){$('log').innerHTML=log.length?log.slice(0,80).map((r,i)=>{
+  if(r.type==='ogoh')return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td colspan="6">datchik ${r.ch}: ${r.sabab}</td><td class="bad">OGOH</td></tr>`;
+  if(r.type==='avariya_toxtash')return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td colspan="6">stanok to'xtadi: ${r.matn} — o'lchov bekor</td><td class="bad">AVARIYA</td></tr>`;
+  const c=r.verdict==='MOS'?'ok':r.verdict==='NOMOS'?'bad':'warn';
+  return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td>${r.qr||'—'}</td><td>${r.expected_mm??'—'}</td><td>${r.measured_mm.toFixed(1)}</td><td>${r.delta_mm!=null?r.delta_mm.toFixed(1):'—'}</td><td>${r.L1??'—'}/${r.L2??'—'}</td><td>${r.v_meas??r.v_nom}</td><td class="${r.pico_kod!=='OK'?'bad':c}">${r.verdict}${r.pico_kod!=='OK'?' '+r.pico_kod:''}</td></tr>`;}).join('')
+  :'<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:16px 0">O\'tkazish yo\'q</td></tr>';}
+
+/* ---------- tugmalar ---------- */
+$('conn').onclick=()=>port?disconnect():connect();
+$('alStop').onclick=()=>{send('STOP');alarmUI(false);verdict('','Avariya o\'chirildi','');};
+$('test').onclick=()=>send('TEST');
+function avChip(){const on=$('sAV').value!=='0';const t='avariya ovozi: '+(on?'yoniq':'O\'CHIQ');
+  $('avBtn').textContent=t;$('avBtn').className='chip'+(on?'':' wait');$('tAVov').textContent=t;}
+function avToggle(){$('sAV').value=$('sAV').value==='0'?'1':'0';avChip();saveSettings();}
+$('avBtn').onclick=avToggle;$('tAVov').onclick=avToggle;
+// Sinov paneli: ohangni darhol Pico ga (saqlamasdan), keyin signal
+function sinovOhang(){$('kHQ').value=nv($('tHQ'),2500);$('kHA').value=nv($('tHA'),1500);sendSet();}
+$('tQR').onclick=()=>{sinovOhang();setTimeout(()=>send('QR'),80);};
+$('tAV').onclick=()=>{sinovOhang();setTimeout(()=>send('ALARM'),80);};
+$('tTEST').onclick=()=>{sinovOhang();setTimeout(()=>send('TEST'),80);};
+$('tSTOP').onclick=()=>{send('STOP');alarmUI(false);};
+$('tSaqla').onclick=()=>{sinovOhang();saveSettings();};
+$('tEkran').onclick=()=>{alarmUI(true,'AVARIYALI TO\'XTASH','SINOV: uzun detal D1 va D2 da — o\'lchov bekor qilindi');send('ALARM');};
+$('sinDet').addEventListener('toggle',()=>{if($('sinDet').open){$('tHQ').value=$('kHQ').value;$('tHA').value=$('kHA').value;}});
+$('reset').onclick=()=>{part=null;done=[0,0];partMeas=[];['pCode','pName','pDim'].forEach(i=>$(i).textContent='—');renderSides();renderStat();verdict('','Detal bekor qilindi','QR kodni skanerlang');};
+$('load').onclick=()=>{const L=nv($('mL'),0),W=nv($('mW'),0);if(!(L>0&&W>0)){verdict('warn','O\'lchamlar kiritilmagan','');return;}
+  setPart({code:$('qrIn').value.trim().toUpperCase()||'QO\'LDA',name:'qo\'lda',L:Math.max(L,W),W:Math.min(L,W),need:$('mN').value.split(',').map(Number)});send('QR');};
+$('sim').onclick=()=>{if(!part){verdict('warn','Avval detal yuklang','');return;}const L=part.L+(Math.random()-0.5)*2;
+  handle(JSON.stringify({ev:'olchov',n:++seq,L:+L.toFixed(1),kod:'OK',shubha:0,L1:+(L-0.6).toFixed(1),L2:+(L+0.6).toFixed(1),d1:0,d2:0,v_olch:17.98,v_nom:18,ish_ms:6650,farq:1.2}));};
+$('clr').onclick=()=>{log=[];renderLog();};
+$('saveSet').onclick=saveSettings;$('loadSet').onclick=()=>syncSettings(true);
+$('stIn').oninput=()=>$('stName').textContent=ST();
+
+/* ---------- boshlanish ---------- */
+(async()=>{
+  if(P.get('station')){$('stIn').value=P.get('station');$('stName').textContent=P.get('station');}
+  $('mesUrl').value=P.get('mes')||(location.origin.startsWith('http')?location.origin:'http://localhost:8000');
+  if(!('serial' in navigator))verdict('bad','WebSerial yo\'q','Chrome/Edge da HTTPS yoki localhost orqali oching');
+  await idbOpen();navbat=await idbAll();qChip();
+  kalYukla();renderLog();renderSides();renderKal();avChip();
+  await syncSettings(true);
+
+  // --- AVTOMATIK ISHLASH ---
+  // Pico USB dan sug'urilib qayta ulansa yoki brauzer qayta ochilsa —
+  // hech qanday tugma bosilmaydi, stansiya o'zi ulanadi.
+  if('serial' in navigator){
+    navigator.serial.addEventListener('connect',()=>autoConnect());
+    navigator.serial.addEventListener('disconnect',()=>{if(port)disconnect();});
+  }
+  const ok=await autoConnect();
+  setTimeout(()=>{if(!port)picoHolat(0);},10000);   // 10 s da Pico topilmasa — MES da stanok o'chiq
+  if(!ok)verdict('warn','Pico kutilmoqda','bir marta "Pico ga ulanish" bosib portni tanlang — keyin har safar avtomatik ulanadi');
+  setInterval(()=>{if(!port)autoConnect();},5000);   // ulanmagan bo'lsa — jimgina qayta urinadi
+})();
+</script>
+</body>
+</html>

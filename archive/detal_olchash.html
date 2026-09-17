@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detal uzunligini o'lchash</title>
+<style>
+:root{
+  --bg:#16181B; --panel:#1E2126; --panel2:#262A30; --line:#33383F;
+  --fg:#E4E7EB; --muted:#949BA6; --dim:#6B7480;
+  --idle:#6B7480; --run:#3FBF6B; --done:#4A9EEA; --alarm:#E0533D; --amber:#F0A32B;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px}
+.shell{max-width:1080px;margin:0 auto;padding:20px 20px 60px}
+h1{font-size:17px;font-weight:600;margin:0;letter-spacing:.02em}
+h2{font-size:12px;font-weight:600;margin:0 0 14px;color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 4px 16px}
+.armed{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.led{width:11px;height:11px;border-radius:50%;background:var(--dim);flex:none}
+.led.on{background:var(--run);box-shadow:0 0 10px var(--run)}
+
+.readout{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.band{height:5px;background:var(--idle);transition:background .15s}
+.band.run{background:var(--run)} .band.done{background:var(--done)} .band.alarm{background:var(--alarm)}
+.rd-in{padding:26px 28px 24px;text-align:center}
+#status{font-size:14px;color:var(--muted);letter-spacing:.04em;min-height:20px}
+#big{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:clamp(56px,13vw,104px);
+     font-weight:600;line-height:1;margin:14px 0 4px;letter-spacing:-.02em}
+#unit{font-family:var(--mono);font-size:20px;color:var(--muted);margin-left:10px;font-weight:400}
+#sub{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted);
+     display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+#sub b{font-weight:600;color:var(--fg)}
+.growbar{height:3px;background:var(--panel2);margin-top:18px;border-radius:2px;overflow:hidden}
+.growbar i{display:block;height:100%;width:0;background:var(--run)}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0}
+.row+.row{border-top:1px solid var(--line)}
+.row label{color:var(--muted);font-size:14px}
+.row .hintx{display:block;font-size:11.5px;color:var(--dim);margin-top:3px}
+input[type=number],input[type=text],select{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:16px;
+  background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:7px;padding:8px 10px;width:118px;text-align:right}
+select{width:150px;text-align:left}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--done);outline-offset:2px}
+button{font-family:var(--sans);font-size:14px;background:var(--panel2);color:var(--fg);
+  border:1px solid var(--line);border-radius:7px;padding:9px 15px;cursor:pointer}
+button:hover{border-color:var(--dim)}
+button.pri{background:var(--amber);border-color:var(--amber);color:#2A1B02;font-weight:600}
+button.pri:hover{filter:brightness(1.08)}
+.btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px}
+th{text-align:right;color:var(--dim);font-weight:500;font-size:11px;letter-spacing:.09em;
+   text-transform:uppercase;padding:0 0 9px}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 0;border-top:1px solid var(--line);text-align:right}
+.scroll{max-height:250px;overflow-y:auto}
+.stats{display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);font-variant-numeric:tabular-nums;
+       font-size:14px;padding-bottom:16px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+.stats span{color:var(--dim);font-size:11px;display:block;letter-spacing:.09em;text-transform:uppercase;
+            margin-bottom:4px;font-family:var(--sans)}
+.spread{color:var(--amber)}
+.note{font-size:13px;line-height:1.6;color:var(--muted);margin-top:14px}
+.empty{color:var(--dim);font-size:14px;padding:22px 0;text-align:center}
+@media(prefers-reduced-motion:no-preference){
+  .band.run{animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.55}}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <h1>Detal uzunligini o'lchash</h1>
+  <div class="armed"><span class="led" id="led"></span><span id="armedTxt">KeyA kutilmoqda</span></div>
+</header>
+
+<div class="readout">
+  <div class="band" id="band"></div>
+  <div class="rd-in">
+    <div id="status">Signal kutilmoqda</div>
+    <div id="big">0.00<span id="unit">cm</span></div>
+    <div id="sub">
+      <div>vaqt <b id="tRaw">0</b> ms</div>
+      <div>tuzatilgan <b id="tCorr">0</b> ms</div>
+      <div>tezlik <b id="vNow">20.0</b> m/min</div>
+    </div>
+    <div class="growbar"><i id="grow"></i></div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>Sozlamalar</h2>
+    <div class="row">
+      <label>Lenta tezligi
+        <span class="hintx">Kalibrlashdan keyin avtomatik yangilanadi</span></label>
+      <input id="speed" type="number" value="20" step="0.01" min="0.01">
+    </div>
+    <div class="row">
+      <label>Kechikish tuzatmasi <b>k</b>
+        <span class="hintx">Rele + klaviatura sistematik xatosi, ms</span></label>
+      <input id="offset" type="number" value="0" step="0.1">
+    </div>
+    <div class="row">
+      <label>Signal tugmasi
+        <span class="hintx">F13 hech qanday belgi chop etmaydi</span></label>
+      <select id="keySel">
+        <option value="KeyA">A</option>
+        <option value="F13">F13</option>
+        <option value="F14">F14</option>
+        <option value="ScrollLock">Scroll Lock</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Eng qisqa qabul qilinadigan signal
+        <span class="hintx">Bundan qisqasi shovqin deb tashlanadi, ms</span></label>
+      <input id="minMs" type="number" value="50" step="10" min="0">
+    </div>
+    <div class="row">
+      <label>Maksimal o'lchov vaqti
+        <span class="hintx">Rele yopishib qolsa uziladi, sekund</span></label>
+      <input id="maxSec" type="number" value="60" step="5" min="1">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Ikki nuqtali kalibrlash</h2>
+    <div class="note" style="margin-top:0">
+      Ma'lum uzunlikdagi etalon detalni o'tkazing, so'ng haqiqiy uzunligini kiriting va nuqta
+      qo'shing. Ikki xil uzunlikdagi kamida 2&nbsp;ta nuqta tezlikni ham, sistematik kechikishni ham
+      bir vaqtda topadi.
+    </div>
+    <div class="row" style="border-top:1px solid var(--line);margin-top:14px">
+      <label>Etalonning haqiqiy uzunligi
+        <span class="hintx" id="lastCap">Oxirgi o'lchov: —</span></label>
+      <input id="calLen" type="number" step="0.1" min="0.1" placeholder="mm">
+    </div>
+    <div class="btns">
+      <button class="pri" id="addCal">Nuqta qo'shish</button>
+      <button id="clrCal">Nuqtalarni tozalash</button>
+    </div>
+    <div class="scroll" style="margin-top:16px">
+      <table>
+        <thead><tr><th>№</th><th>vaqt, ms</th><th>haqiqiy, mm</th></tr></thead>
+        <tbody id="calBody"></tbody>
+      </table>
+    </div>
+    <div class="note" id="calOut"></div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2>O'lchovlar seriyasi</h2>
+  <div class="stats">
+    <div><span>Soni</span><b id="sN">0</b></div>
+    <div><span>O'rtacha</span><b id="sAvg">—</b></div>
+    <div><span>Eng kichik</span><b id="sMin">—</b></div>
+    <div><span>Eng katta</span><b id="sMax">—</b></div>
+    <div><span>Tarqoq</span><b class="spread" id="sRange">—</b></div>
+  </div>
+
+  <svg id="scatter" viewBox="0 0 600 74" width="100%" height="74" style="margin:10px 0 6px" aria-hidden="true"></svg>
+  <div class="note" style="margin-top:0">
+    Nuqtalar o'rtacha qiymatdan chetlanishni ko'rsatadi. Bir xil detallar seriyasida bu tarqoqlik
+    tizimning haqiqiy takrorlanuvchanligi — uni dastur bilan kamaytirib bo'lmaydi.
+  </div>
+
+  <div class="scroll" style="margin-top:16px">
+    <table>
+      <thead><tr><th>№</th><th>vaqt, ms</th><th>uzunlik, mm</th><th>uzunlik, cm</th><th>soat</th></tr></thead>
+      <tbody id="hBody"></tbody>
+    </table>
+  </div>
+
+  <div class="btns">
+    <button id="csv">CSV yuklab olish</button>
+    <button id="clr">Seriyani tozalash</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const speedEl=$('speed'), offEl=$('offset'), keySel=$('keySel'), minEl=$('minMs'), maxEl=$('maxSec');
+const band=$('band'), statusEl=$('status'), bigEl=$('big'), unitEl=$('unit');
+const tRaw=$('tRaw'), tCorr=$('tCorr'), vNow=$('vNow'), grow=$('grow'), led=$('led'), armedTxt=$('armedTxt');
+
+let measuring=false, t0=0, toId=null, rafId=null, lastRaw=null;
+let hist=[], cal=[];
+
+const num = (el,d) => { const v=parseFloat(el.value); return isFinite(v)?v:d; };
+const vMps  = () => num(speedEl,20)/60;          // m/min -> m/s (= mm/ms)
+const kMs   = () => num(offEl,0);
+const lenMm = t => vMps()*(t-kMs());
+
+function setBand(c,txt){ band.className='band'+(c?' '+c:''); statusEl.textContent=txt; }
+function show(mm,t){
+  bigEl.innerHTML=(mm/10).toFixed(2)+'<span id="unit">cm</span>';
+  tRaw.textContent=t.toFixed(1); tCorr.textContent=(t-kMs()).toFixed(1);
+}
+
+function start(){
+  measuring=true; t0=performance.now(); led.classList.add('on');
+  setBand('run',"O'lchanmoqda — signal faol");
+  grow.style.width='0%';
+  toId=setTimeout(abort, num(maxEl,60)*1000);
+  const tick=()=>{ if(!measuring) return;
+    const t=performance.now()-t0;
+    show(lenMm(t),t);
+    grow.style.width=Math.min(100,t/(num(maxEl,60)*1000)*100)+'%';
+    rafId=requestAnimationFrame(tick); };
+  rafId=requestAnimationFrame(tick);
+}
+
+function finish(){
+  const t=performance.now()-t0; cleanup();
+  if(t<num(minEl,50)){ setBand('alarm','Signal juda qisqa ('+t.toFixed(0)+' ms) — shovqin deb tashlandi'); return; }
+  const mm=lenMm(t); lastRaw=t;
+  hist.unshift({t,mm,at:new Date()});
+  show(mm,t); setBand('done',"O'lchov qabul qilindi");
+  $('lastCap').textContent='Oxirgi o\'lchov: '+t.toFixed(1)+' ms';
+  render();
+}
+
+function abort(){ cleanup(); setBand('alarm',"O'lchov uzildi — signal tugamadi yoki oyna fokusni yo'qotdi"); }
+function cleanup(){ measuring=false; led.classList.remove('on'); clearTimeout(toId); cancelAnimationFrame(rafId); grow.style.width='0%'; }
+
+document.addEventListener('keydown',e=>{
+  if(e.code!==keySel.value) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  e.preventDefault();
+  if(e.repeat) return;
+  if(!measuring) start();
+});
+document.addEventListener('keyup',e=>{
+  if(e.code!==keySel.value) return;
+  if(measuring) finish();
+});
+window.addEventListener('blur',()=>{ if(measuring) abort(); });
+document.addEventListener('visibilitychange',()=>{ if(document.hidden&&measuring) abort(); });
+keySel.addEventListener('change',()=>{ armedTxt.textContent=keySel.value+' kutilmoqda'; });
+speedEl.addEventListener('input',()=>{ vNow.textContent=num(speedEl,20).toFixed(2); });
+
+$('addCal').onclick=()=>{
+  const L=parseFloat($('calLen').value);
+  if(lastRaw===null){ $('calOut').textContent='Avval etalon detalni o\'tkazing.'; return; }
+  if(!(L>0)){ $('calOut').textContent='Etalonning haqiqiy uzunligini mm da kiriting.'; return; }
+  cal.push({t:lastRaw,L}); $('calLen').value=''; lastRaw=null;
+  $('lastCap').textContent='Oxirgi o\'lchov: —';
+  solve(); render();
+};
+$('clrCal').onclick=()=>{ cal=[]; $('calOut').textContent=''; render(); };
+
+function solve(){
+  if(cal.length<2){ $('calOut').textContent='Yana '+(2-cal.length)+' ta nuqta kerak.'; return; }
+  const n=cal.length;
+  let sT=0,sL=0,sTT=0,sTL=0;
+  for(const p of cal){ sT+=p.t; sL+=p.L; sTT+=p.t*p.t; sTL+=p.t*p.L; }
+  const den=n*sTT-sT*sT;
+  if(Math.abs(den)<1e-6){ $('calOut').textContent='Nuqtalarning vaqtlari juda yaqin — turli uzunlikdagi etalon oling.'; return; }
+  const a=(n*sTL-sT*sL)/den;          // mm/ms = m/s
+  const b=(sL-a*sT)/n;                // mm
+  if(a<=0){ $('calOut').textContent='Natija mantiqsiz — nuqtalarni tekshiring.'; return; }
+  const v=a*60, k=-b/a;
+  speedEl.value=v.toFixed(3); offEl.value=k.toFixed(1); vNow.textContent=v.toFixed(2);
+  $('calOut').textContent='Topildi: tezlik '+v.toFixed(3)+' m/min, kechikish tuzatmasi '+k.toFixed(1)+
+    ' ms. Bu qiymatlarni yozib oling — ular sahifa yangilanganda saqlanmaydi.';
+}
+
+function render(){
+  $('calBody').innerHTML = cal.length ? cal.map((p,i)=>
+    `<tr><td>${i+1}</td><td>${p.t.toFixed(1)}</td><td>${p.L.toFixed(1)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="empty">Nuqta yo\'q</td></tr>';
+
+  $('hBody').innerHTML = hist.length ? hist.map((h,i)=>
+    `<tr><td>${hist.length-i}</td><td>${h.t.toFixed(1)}</td><td>${h.mm.toFixed(1)}</td><td>${(h.mm/10).toFixed(2)}</td><td>${h.at.toLocaleTimeString('uz')}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">O\'lchov yo\'q</td></tr>';
+
+  const L=hist.map(h=>h.mm), n=L.length;
+  $('sN').textContent=n;
+  if(!n){ ['sAvg','sMin','sMax','sRange'].forEach(i=>$(i).textContent='—'); $('scatter').innerHTML=''; return; }
+  const avg=L.reduce((a,b)=>a+b,0)/n, mn=Math.min(...L), mx=Math.max(...L);
+  $('sAvg').textContent=avg.toFixed(1)+' mm'; $('sMin').textContent=mn.toFixed(1)+' mm';
+  $('sMax').textContent=mx.toFixed(1)+' mm'; $('sRange').textContent='±'+((mx-mn)/2).toFixed(1)+' mm';
+  drawScatter(L,avg);
+}
+
+function drawScatter(L,avg){
+  const half=Math.max(...L.map(v=>Math.abs(v-avg)),0.5);
+  const dots=L.map(v=>{
+    const x=300+((v-avg)/half)*258;
+    return `<circle cx="${x.toFixed(1)}" cy="34" r="5" fill="#4A9EEA" fill-opacity="0.45"/>`;
+  }).join('');
+  $('scatter').innerHTML=
+    `<line x1="42" y1="34" x2="558" y2="34" stroke="#33383F" stroke-width="1"/>
+     <line x1="300" y1="16" x2="300" y2="52" stroke="#6B7480" stroke-width="1"/>
+     ${dots}
+     <text x="42" y="68" fill="#6B7480" font-size="11" font-family="ui-monospace,monospace">-${half.toFixed(1)} mm</text>
+     <text x="300" y="68" fill="#6B7480" font-size="11" text-anchor="middle" font-family="ui-monospace,monospace">o'rtacha</text>
+     <text x="558" y="68" fill="#6B7480" font-size="11" text-anchor="end" font-family="ui-monospace,monospace">+${half.toFixed(1)} mm</text>`;
+}
+
+$('csv').onclick=()=>{
+  if(!hist.length) return;
+  const head=`# tezlik;${num(speedEl,20)};m/min\n# kechikish tuzatmasi;${kMs()};ms\n`;
+  const rows=hist.slice().reverse().map((h,i)=>
+    [i+1,h.t.toFixed(1),h.mm.toFixed(1),(h.mm/10).toFixed(2),h.at.toISOString()].join(';')).join('\n');
+  const blob=new Blob(['\ufeff'+head+'№;vaqt_ms;uzunlik_mm;uzunlik_cm;sana\n'+rows],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='olchov_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$('clr').onclick=()=>{ hist=[]; render(); setBand('','Signal kutilmoqda'); bigEl.innerHTML='0.00<span id="unit">cm</span>'; tRaw.textContent='0'; tCorr.textContent='0'; };
+
+render();
+</script>
+</body>
+</html>

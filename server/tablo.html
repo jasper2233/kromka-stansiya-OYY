@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MES tablo — sinov</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#16181B;--panel:#1E2126;--panel2:#262A30;--line:#33383F;--fg:#E4E7EB;--muted:#949BA6;--dim:#6B7480;
+  --ok:#3FBF6B;--info:#4A9EEA;--alarm:#E0533D;--amber:#F0A32B;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px}
+.shell{max-width:1200px;margin:0 auto;padding:14px 16px 50px}
+h2{font-size:11px;font-weight:600;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 4px 12px;flex-wrap:wrap}
+header b{font-size:16px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:20px;padding:4px 11px;background:var(--panel)}
+.chip.ok{border-color:var(--ok);color:var(--ok)}.chip.bad{border-color:var(--alarm);color:var(--alarm)}.chip.info{border-color:var(--info);color:var(--info)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.st em{font-style:normal;display:block;font-size:10.5px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.st b{font-family:var(--mono);font-size:28px;display:block;margin-top:4px;font-weight:600}
+.st b.bad{color:var(--alarm)}.st b.ok{color:var(--ok)}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px}
+th{text-align:right;color:var(--dim);font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;padding:0 0 7px}
+th:first-child,td:first-child{text-align:left}
+td{padding:5px 0;border-top:1px solid var(--line);text-align:right}
+td.ok{color:var(--ok)}td.bad{color:var(--alarm)}td.warn{color:var(--amber)}
+.scroll{max-height:420px;overflow-y:auto}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select{font-family:var(--mono);font-size:14px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+button{font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer}
+button.amb{background:var(--amber);border-color:var(--amber);color:#2A1B02;font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.pc{background:#fff;border-radius:10px;padding:10px;text-align:center;color:#111}
+.pc .q{width:110px;height:110px;margin:0 auto 6px}
+.pc b{font-family:var(--mono);font-size:13px;display:block}
+.pc small{font-size:11px;color:#555;display:block}
+.pc button{margin-top:6px;font-size:11px;padding:3px 8px;background:#eee;color:#333;border-color:#ccc}
+.tabs{display:flex;gap:6px;margin:-4px 0 10px;flex-wrap:wrap}.tabs button{font-size:12px;padding:5px 12px;border-radius:20px}
+.tabs button.on{background:var(--info);border-color:var(--info);color:#04223F;font-weight:600}
+.note{font-size:12px;line-height:1.55;color:var(--dim);margin-top:10px}
+@media print{body{background:#fff;color:#000}.card,header,.stats,.grid>.card:first-child{display:none}.pc{border:1px solid #999;page-break-inside:avoid}#partsCard{display:block!important;background:#fff;border:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <b>MES tablo — sinov</b>
+  <div class="chips">
+    <span class="chip" id="srv">server: —</span>
+    <span class="chip" id="usk">uskuna: —</span>
+    <span class="chip" id="tz">tezlik: —</span>
+    <span class="chip" id="upd">yangilanish: 3 s</span>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="st"><em>Bugun o'lchov</em><b id="sN">—</b></div>
+  <div class="st"><em>Nomos o'lcham</em><b id="sBad" class="bad">—</b></div>
+  <div class="st"><em>Skaner bilan</em><b id="sSk" class="ok">—</b></div>
+  <div class="st"><em>Skanersiz</em><b id="sSs">—</b></div>
+  <div class="st"><em>Datchik ogohlari</em><b id="sOg" class="bad">—</b></div>
+  <div class="st"><em>Oxirgi o'lchov</em><b id="sLast">—</b></div>
+</div>
+
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>O'lchovlar — oxirgi 200</h2>
+      <div class="tabs"><button data-tur="" class="on">Hammasi</button><button data-tur="skaner">Skaner bilan</button><button data-tur="skanersiz">Skanersiz</button></div>
+      <div class="scroll"><table>
+        <thead><tr><th>vaqt</th><th>stansiya</th><th>detal</th><th>kutilgan</th><th>o'lchangan</th><th>farq</th><th>tomon</th><th>tezlik</th><th>ishlov</th><th>natija</th></tr></thead>
+        <tbody id="olch"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>Ogohlantirishlar va holat</h2>
+      <div class="scroll" style="max-height:220px"><table>
+        <thead><tr><th>vaqt</th><th>turi</th><th>tafsilot</th></tr></thead>
+        <tbody id="ogoh"></tbody></table></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Stanok ish jurnali — oxirgi 24 soat</h2>
+      <div class="scroll" style="max-height:260px"><table>
+        <thead><tr><th>holat</th><th>dan</th><th>gacha</th><th>davom</th></tr></thead>
+        <tbody id="jurnal"></tbody></table></div>
+      <div class="note">"Stanok o'chiq" — Pico ga tok kelmadi, kabel uzildi yoki stansiya kompyuteri 3 daqiqadan ko'p ko'rinmadi. Pico yoqiq bo'lib faqat MES/internet yo'q bo'lsa — o'lchovlar Pico va stansiya navbatida saqlanib, aloqa tiklanganda yuboriladi.</div>
+    </div>
+    <div class="card" id="partsCard">
+      <h2>Detallar va QR kodlar</h2>
+      <div class="f2">
+        <div><label for="pc">Kod</label><input id="pc" placeholder="A-1005"></div>
+        <div><label for="pn">Nomi</label><input id="pn" placeholder="Eshik"></div>
+      </div>
+      <div class="f2">
+        <div><label for="pl">Uzun, mm</label><input id="pl" type="number"></div>
+        <div><label for="pw">Kalta, mm</label><input id="pw" type="number"></div>
+      </div>
+      <div class="f2">
+        <div><label for="pnd">Tomonlar</label><select id="pnd"><option value="2,2">2+2</option><option value="2,0">2 uzun</option><option value="0,2">2 kalta</option><option value="1,0">1 uzun</option></select></div>
+        <div><label>&nbsp;</label><button class="amb" id="addP" style="width:100%">Qo'shish</button></div>
+      </div>
+      <div class="btns"><button onclick="window.print()">QR kodlarni chop etish</button><button id="clrEv">Hodisalarni tozalash</button></div>
+      <div class="parts" id="parts"></div>
+      <div class="note">QR kodni telefon ekranida ko'rsatib yoki chop etib skanerlang. Skaner kod matnini yozadi — stansiya uni MES dan qidiradi.</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const API=location.origin;
+
+let olchTur='';
+document.addEventListener('click',e=>{const b=e.target.closest('.tabs button');if(!b)return;
+  olchTur=b.dataset.tur;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));refresh();});
+async function refresh(){
+  try{
+    const [st,ev]=await Promise.all([fetch(API+'/api/stats').then(r=>r.json()),fetch(API+'/api/recent?n=200').then(r=>r.json())]);
+    $('srv').className='chip ok';$('srv').textContent='server: ulangan';
+    $('sN').textContent=st.olchovlar;$('sBad').textContent=st.nomos;$('sOg').textContent=st.ogohlar;
+    $('usk').className='chip'+(st.stanok==='ishlayapti'?' ok':st.stanok==="o'chiq"?' bad':'');$('usk').textContent='stanok: '+(st.stanok??'—');
+    $('tz').className='chip'+(st.tezlik?' info':'');$('tz').textContent='tezlik: '+(st.tezlik??'—')+(st.tezlik?' m/min':'');
+    const [ol,jr]=await Promise.all([fetch(API+'/api/olchovlar?n=200&tur='+olchTur).then(r=>r.json()),fetch(API+'/api/jurnal?soat=24').then(r=>r.json())]);
+    $('sSk').textContent=st.skaner??'—';$('sSs').textContent=st.skanersiz??'—';
+    const HN={ishladi:['ishladi','ok'],"to'xtadi":["to'xtadi",'warn'],"o'chiq":["stanok o'chiq",'bad']};
+    const soat=t=>t?new Date(t).toLocaleTimeString('uz'):'hozir';
+    const davom=(a,b)=>{const s=Math.max(0,Math.round(((b?new Date(b):new Date())-new Date(a))/1000));return s>=3600?Math.floor(s/3600)+' soat '+Math.floor(s%3600/60)+' daq':s>=60?Math.floor(s/60)+' daq '+s%60+' s':s+' s';};
+    $('jurnal').innerHTML=jr.map(j=>{const h=HN[j.holat]||[j.holat,''];return`<tr><td class="${h[1]}">${h[0]}</td><td>${soat(j.dan)}</td><td>${soat(j.gacha)}</td><td>${davom(j.dan,j.gacha)}</td></tr>`;}).join('')
+      ||'<tr><td colspan="4" style="text-align:center;color:var(--dim);padding:14px 0">Yozuv yo\'q</td></tr>';
+    if(ol.length){const d=ol[0].data;$('sLast').textContent=d.measured_mm?.toFixed(0)+' mm';$('sLast').className=d.verdict==='MOS'?'ok':d.verdict==='NOMOS'?'bad':'';}
+    $('olch').innerHTML=ol.slice(0,200).map(e=>{const d=e.data;const c=d.verdict==='MOS'?'ok':d.verdict==='NOMOS'?'bad':'warn';
+      return`<tr><td>${new Date(e.ts).toLocaleTimeString('uz')}</td><td>${e.station}</td><td>${d.qr||'—'}${d.xotiradan?' <span style="color:var(--amber)" title="Pico xotirasidan">⟲</span>':''}</td><td>${d.expected_mm??'—'}</td><td>${d.measured_mm?.toFixed(1)}</td><td>${d.delta_mm!=null?d.delta_mm.toFixed(1):'—'}</td><td>${d.side||'—'}</td><td>${d.v_meas??d.v_nom??'—'}</td><td>${d.ish_ms??'—'}</td><td class="${d.pico_kod&&d.pico_kod!=='OK'?'bad':c}">${d.verdict}${d.pico_kod&&d.pico_kod!=='OK'?' '+d.pico_kod:''}</td></tr>`;}).join('')
+      ||'<tr><td colspan="10" style="text-align:center;color:var(--dim);padding:16px 0">Hali o\'lchov yo\'q</td></tr>';
+    const og=ev.filter(e=>e.type==='ogoh'||e.type==='avariya_toxtash'||e.type==='uskuna'||e.type==='pico'||e.type==='tezlik').slice(0,40);
+    $('ogoh').innerHTML=og.map(e=>{const d=e.data;let t,cls='';
+      if(e.type==='ogoh'){t='datchik '+d.ch+' — '+d.sabab;cls='bad';}
+      else if(e.type==='avariya_toxtash'){const j=[];if(d.d1&&d.d2&&d.birga)j.push('uzun detal D1 va D2 da');else{if(d.d1)j.push('D1 da');if(d.d2)j.push('D2 da');}if(d.oraliq)j.push(d.oraliq+' ta oraliqda');t='stanok to\'xtadi: '+j.join(', ')+' — o\'lchov bekor';cls='bad';}
+      else if(e.type==='uskuna'){t=d.holat?'ishlayapti':'to\'xtadi';cls=d.holat?'ok':'';}
+      else if(e.type==='pico'){t=d.holat?'Pico ulandi — stanok yoqildi':'stanok o\'chiq (Pico/stansiya ko\'rinmadi)';cls=d.holat?'ok':'bad';}
+      else{t=d.v+' m/min';cls='warn';}
+      return`<tr><td>${new Date(e.ts).toLocaleTimeString('uz')}</td><td class="${cls}">${e.type}</td><td>${t}</td></tr>`;}).join('')
+      ||'<tr><td colspan="3" style="text-align:center;color:var(--dim);padding:14px 0">Yo\'q</td></tr>';
+  }catch(e){$('srv').className='chip bad';$('srv').textContent='server: yo\'q';}
+}
+
+async function loadParts(){
+  const ps=await fetch(API+'/api/parts').then(r=>r.json());
+  $('parts').innerHTML=ps.map(p=>`<div class="pc"><div class="q" id="q_${p.code}"></div><b>${p.code}</b><small>${p.name||''}</small><small>${p.L} × ${p.W} · ${p.need}</small><button data-c="${p.code}">o'chirish</button></div>`).join('');
+  for(const p of ps){const el=$('q_'+p.code);if(window.QRCode){new QRCode(el,{text:p.code,width:110,height:110,correctLevel:QRCode.CorrectLevel.M});}else{el.innerHTML='<div style="font:600 18px monospace;padding:40px 0">'+p.code+'</div>';}}
+  document.querySelectorAll('.pc button').forEach(b=>b.onclick=async()=>{await fetch(API+'/api/parts/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:b.dataset.c})});loadParts();});
+}
+$('addP').onclick=async()=>{
+  const b={code:$('pc').value,name:$('pn').value,L:$('pl').value,W:$('pw').value,need:$('pnd').value};
+  if(!b.code||!b.L||!b.W)return;
+  await fetch(API+'/api/parts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  $('pc').value=$('pn').value=$('pl').value=$('pw').value='';loadParts();
+};
+$('clrEv').onclick=async()=>{if(confirm('Barcha hodisalar o\'chirilsinmi?')){await fetch(API+'/api/clear',{method:'POST'});refresh();}};
+
+refresh();loadParts();setInterval(refresh,3000);
+</script>
+</body>
+</html>

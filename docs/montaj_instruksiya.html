@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kromka stansiyasi — montaj instruksiyasi</title>
+<style>
+:root{
+  --ink:#1C1917; --mut:#57534E; --dim:#8A857F; --rule:#D6D3D1;
+  --acc:#0F6E56; --warn:#B45309; --dan:#B91C1C; --bg:#FFFFFF; --tint:#F5F4F1;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.65}
+.doc{max-width:830px;margin:0 auto;padding:40px 36px 80px}
+
+.head{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:32px}
+.head h1{font-size:25px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+.head p{margin:0;color:var(--mut);font-size:14px}
+.meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;
+      font-family:var(--mono);font-size:12px;color:var(--dim)}
+
+h2{font-size:17px;font-weight:600;margin:44px 0 14px;padding-top:14px;
+   border-top:1px solid var(--rule);display:flex;align-items:baseline;gap:12px}
+h2 span{font-family:var(--mono);font-size:13px;color:var(--acc);font-weight:500;flex:none}
+h3{font-size:15px;font-weight:600;margin:26px 0 10px}
+p{margin:0 0 12px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.08em;
+   text-transform:uppercase;color:var(--mut);padding:0 10px 8px 0;border-bottom:1px solid var(--ink)}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td.m,th.m{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+tr.hl td{background:#FFF7ED}
+
+figure{margin:20px 0 24px;padding:0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:12.5px;color:var(--mut);margin-top:8px;padding-left:2px}
+
+.box{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;margin:18px 0;
+     background:var(--tint);font-size:14px}
+.box.dan{border-color:var(--dan);background:#FEF2F2}
+.box.warn{border-color:var(--warn);background:#FFFBEB}
+.box b{display:block;margin-bottom:5px;font-weight:600}
+.box.dan b{color:var(--dan)} .box.warn b{color:var(--warn)}
+
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:16px 0}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 16px 44px;margin:0}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;
+  width:28px;height:28px;border:1px solid var(--ink);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:600}
+ol.steps>li b{font-weight:600}
+
+code{font-family:var(--mono);font-size:13px;background:var(--tint);
+     padding:1px 5px;border-radius:4px}
+.chk{list-style:none;padding:0;margin:12px 0}
+.chk li{padding:7px 0 7px 30px;position:relative;border-bottom:1px solid var(--rule);font-size:14px}
+.chk li::before{content:"";position:absolute;left:2px;top:11px;width:13px;height:13px;
+  border:1.5px solid var(--mut);border-radius:3px}
+
+@media print{
+  body{font-size:11.5pt}
+  .doc{max-width:none;padding:0}
+  h2{page-break-after:avoid} figure{page-break-inside:avoid}
+  table{page-break-inside:avoid} .box{page-break-inside:avoid}
+  ol.steps>li{page-break-inside:avoid}
+  .pb{page-break-before:always}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="head">
+  <h1>Kromka stansiyasi — montaj instruksiyasi</h1>
+  <p>Detal uzunligini o'lchash va MES tizimiga uzatish uchun datchik tugunini yig'ish</p>
+  <div class="meta">
+    <span>Versiya 1.0</span><span>Post 1</span><span>Uskuna: kromka yopishtirish stanogi</span>
+  </div>
+</div>
+
+<h2><span>1</span> Komponentlar</h2>
+
+<table>
+<thead><tr><th>Komponent</th><th class="m">Soni</th><th>Vazifasi</th></tr></thead>
+<tbody>
+<tr><td>Omron E3Z-T61 (NPN) to'siq datchigi<br><span style="color:var(--mut);font-size:12.5px">nurlatgich + qabul qilgich komplekti</span></td><td class="m">1 kompl.</td><td>Detalning o'tishini sezish</td></tr>
+<tr><td>24 V DC blok pitaniya, 1 A, DIN</td><td class="m">1</td><td>Datchiklarni oziqlantirish</td></tr>
+<tr><td>Raspberry Pi Pico</td><td class="m">1</td><td>Vaqtni mikrosekundda o'lchash, USB orqali uzatish</td></tr>
+<tr><td>PC817 optopara (DIP-4)</td><td class="m">1</td><td>24 V va 3.3 V tomonlarini ajratish</td></tr>
+<tr><td>Rezistor 4.7 kΩ, 0.25 W</td><td class="m">1</td><td>Optopara LED tokini cheklash (R1)</td></tr>
+<tr><td>Rezistor 4.7 kΩ, 0.25 W</td><td class="m">1</td><td>Ixtiyoriy: GP2 tortuvchi rezistor (R2)</td></tr>
+<tr><td>Micro-USB <b>data</b> kabel, 2–3 m</td><td class="m">1</td><td>Pico → monoblok</td></tr>
+<tr><td>Maketka plata yoki kichik PCB</td><td class="m">1</td><td>PC817 va rezistorni lehimlash</td></tr>
+<tr><td>Plastik korpus, klemma kolodka</td><td class="m">1</td><td>Tugunni joylash va himoyalash</td></tr>
+<tr><td>Montaj simi 0.5 mm², kabel kanal</td><td class="m">—</td><td>Ichki ulanishlar</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+<b>Micro-USB kabel haqida</b>
+Arzon kabellarning ko'pi faqat quvvat uzatadi — ma'lumot simlari yo'q. Bunday kabel bilan
+Pico kompyuterda umuman ko'rinmaydi. Ma'lumot uzatadigan (data) kabel ekaniga ishonch hosil qiling.
+</div>
+
+<h2><span>2</span> Umumiy tuzilish</h2>
+
+<figure>
+<svg viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Tizimning umumiy blok sxemasi</title>
+<desc>Datchik optopara orqali Pico ga, Pico USB orqali monoblokka, monoblok tarmoq orqali MES serverga ulanadi.</desc>
+<defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#57534E" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+<rect x="30" y="55" width="140" height="58" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+<text x="100" y="79" text-anchor="middle" font-size="14" font-weight="500" fill="#085041" font-family="system-ui">Datchik</text>
+<text x="100" y="98" text-anchor="middle" font-size="12" fill="#0F6E56" font-family="system-ui">E3Z-T61, 24 V</text>
+<line x1="172" y1="84" x2="196" y2="84" stroke="#57534E" stroke-width="1.2" marker-end="url(#a1)"/>
+<rect x="200" y="55" width="140" height="58" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="270" y="79" text-anchor="middle" font-size="14" font-weight="500" fill="#633806" font-family="system-ui">PC817</text>
+<text x="270" y="98" text-anchor="middle" font-size="12" fill="#854F0B" font-family="system-ui">galvanik ajratish</text>
+<line x1="342" y1="84" x2="366" y2="84" stroke="#57534E" stroke-width="1.2" marker-end="url(#a1)"/>
+<rect x="370" y="55" width="140" height="58" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+<text x="440" y="79" text-anchor="middle" font-size="14" font-weight="500" fill="#3C3489" font-family="system-ui">Pico</text>
+<text x="440" y="98" text-anchor="middle" font-size="12" fill="#534AB7" font-family="system-ui">vaqt o'lchagich</text>
+<line x1="512" y1="84" x2="536" y2="84" stroke="#57534E" stroke-width="1.2" marker-end="url(#a1)"/>
+<rect x="540" y="55" width="140" height="58" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.6"/>
+<text x="610" y="79" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A" font-family="system-ui">Monoblok</text>
+<text x="610" y="98" text-anchor="middle" font-size="12" fill="#5F5E5A" font-family="system-ui">1 ta USB</text>
+<line x1="610" y1="115" x2="610" y2="152" stroke="#57534E" stroke-width="1.2" marker-end="url(#a1)"/>
+<text x="620" y="138" font-size="12" fill="#57534E" font-family="system-ui">tarmoq</text>
+<rect x="510" y="156" width="200" height="52" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+<text x="610" y="177" text-anchor="middle" font-size="14" font-weight="500" fill="#3C3489" font-family="system-ui">MES server</text>
+<text x="610" y="195" text-anchor="middle" font-size="12" fill="#534AB7" font-family="system-ui">barcha hisob-kitob</text>
+<rect x="30" y="156" width="140" height="52" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="100" y="177" text-anchor="middle" font-size="14" font-weight="500" fill="#633806" font-family="system-ui">24 V blok</text>
+<text x="100" y="195" text-anchor="middle" font-size="12" fill="#854F0B" font-family="system-ui">pitaniya</text>
+<line x1="100" y1="152" x2="100" y2="117" stroke="#57534E" stroke-width="1.2" marker-end="url(#a1)"/>
+</svg>
+<figcaption>1-rasm. Signal yo'li: datchik → optopara → Pico → monoblok → MES server.</figcaption>
+</figure>
+
+<h2><span>3</span> Elektr sxemasi</h2>
+
+<figure>
+<svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Datchikning optopara orqali Pico ga ulanish elektr sxemasi</title>
+<desc>Nurlatgich va qabul qilgich yigirma to'rt volt shinasiga ulanadi, qabul qilgichning qora simi optopara LEDiga boradi, optoparaning chiqishi Pico ning GP2 oyog'iga ulanadi. Ikki tomonning yerlari bir-biriga ulanmaydi.</desc>
+
+<line x1="40" y1="70" x2="560" y2="70" stroke="#1C1917" stroke-width="1.4"/>
+<text x="44" y="60" font-size="12.5" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">+24 V</text>
+<line x1="40" y1="340" x2="345" y2="340" stroke="#1C1917" stroke-width="1.4"/>
+<text x="44" y="358" font-size="12.5" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">0 V  (24 V tomoni)</text>
+<line x1="500" y1="340" x2="720" y2="340" stroke="#1C1917" stroke-width="1.4"/>
+<text x="504" y="358" font-size="12.5" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">GND (Pico tomoni)</text>
+
+<line x1="455" y1="40" x2="455" y2="222" stroke="#B91C1C" stroke-width="0.8" stroke-dasharray="5 4"/>
+<line x1="455" y1="318" x2="455" y2="382" stroke="#B91C1C" stroke-width="0.8" stroke-dasharray="5 4"/>
+<text x="455" y="30" text-anchor="middle" font-size="12" fill="#B91C1C" font-family="system-ui">galvanik ajratish</text>
+
+<rect x="60" y="150" width="120" height="60" rx="7" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+<text x="120" y="174" text-anchor="middle" font-size="13.5" font-weight="500" fill="#085041" font-family="system-ui">Nurlatgich</text>
+<text x="120" y="192" text-anchor="middle" font-size="11.5" fill="#0F6E56" font-family="system-ui">2 sim</text>
+<line x1="85" y1="150" x2="85" y2="70" stroke="#1C1917" stroke-width="1.2"/>
+<text x="91" y="118" font-size="12" fill="#57534E" font-family="system-ui">jigarrang</text>
+<line x1="150" y1="210" x2="150" y2="340" stroke="#1C1917" stroke-width="1.2"/>
+<text x="156" y="300" font-size="12" fill="#57534E" font-family="system-ui">ko'k</text>
+
+<rect x="210" y="150" width="140" height="60" rx="7" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+<text x="280" y="174" text-anchor="middle" font-size="13.5" font-weight="500" fill="#085041" font-family="system-ui">Qabul qilgich</text>
+<text x="280" y="192" text-anchor="middle" font-size="11.5" fill="#0F6E56" font-family="system-ui">3 sim</text>
+<line x1="235" y1="150" x2="235" y2="70" stroke="#1C1917" stroke-width="1.2"/>
+<text x="241" y="118" font-size="12" fill="#57534E" font-family="system-ui">jigarrang</text>
+<line x1="280" y1="210" x2="280" y2="340" stroke="#1C1917" stroke-width="1.2"/>
+<text x="286" y="300" font-size="12" fill="#57534E" font-family="system-ui">ko'k</text>
+<line x1="340" y1="210" x2="340" y2="280" stroke="#1C1917" stroke-width="1.2"/>
+<line x1="340" y1="280" x2="400" y2="280" stroke="#1C1917" stroke-width="1.2"/>
+<text x="334" y="250" text-anchor="end" font-size="12" fill="#57534E" font-family="system-ui">qora</text>
+
+<line x1="370" y1="70" x2="370" y2="150" stroke="#1C1917" stroke-width="1.2"/>
+<rect x="359" y="150" width="22" height="50" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<line x1="370" y1="200" x2="370" y2="250" stroke="#1C1917" stroke-width="1.2"/>
+<line x1="370" y1="250" x2="400" y2="250" stroke="#1C1917" stroke-width="1.2"/>
+<text x="387" y="178" font-size="12" fill="#854F0B" font-family="system-ui">R1  4.7 kΩ</text>
+
+<rect x="400" y="222" width="110" height="96" rx="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+<text x="455" y="258" text-anchor="middle" font-size="13.5" font-weight="500" fill="#633806" font-family="system-ui">PC817</text>
+<text x="455" y="284" text-anchor="middle" font-size="11.5" fill="#854F0B" font-family="system-ui">optopara</text>
+<text x="394" y="254" text-anchor="end" font-size="12" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">1</text>
+<text x="394" y="284" text-anchor="end" font-size="12" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">2</text>
+<text x="516" y="254" font-size="12" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">4</text>
+<text x="516" y="284" font-size="12" font-weight="500" fill="#1C1917" font-family="ui-monospace,monospace">3</text>
+
+<line x1="510" y1="250" x2="590" y2="250" stroke="#1C1917" stroke-width="1.2"/>
+<text x="530" y="240" font-size="12" fill="#57534E" font-family="system-ui">GP2</text>
+<line x1="510" y1="280" x2="555" y2="280" stroke="#1C1917" stroke-width="1.2"/>
+<line x1="555" y1="280" x2="555" y2="340" stroke="#1C1917" stroke-width="1.2"/>
+
+<rect x="590" y="200" width="120" height="100" rx="7" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+<text x="650" y="240" text-anchor="middle" font-size="13.5" font-weight="500" fill="#3C3489" font-family="system-ui">Pico</text>
+<text x="650" y="264" text-anchor="middle" font-size="11.5" fill="#534AB7" font-family="system-ui">RP2040</text>
+<line x1="650" y1="300" x2="650" y2="340" stroke="#1C1917" stroke-width="1.2"/>
+<line x1="650" y1="200" x2="650" y2="166" stroke="#1C1917" stroke-width="1.2"/>
+<text x="656" y="162" font-size="12" fill="#57534E" font-family="system-ui">USB → monoblok</text>
+</svg>
+<figcaption>2-rasm. Elektr sxemasi. Qizil punktir chiziq — galvanik ajratish chegarasi.
+Chap tomon 24 V bilan, o'ng tomon 3.3 V bilan ishlaydi.</figcaption>
+</figure>
+
+<div class="box dan">
+<b>Eng muhim qoida</b>
+24 V tomonidagi <code>0 V</code> ni Pico tomonidagi <code>GND</code> ga <b>hech qachon ulamang.</b>
+Ular alohida qolishi kerak — butun optoparaning maqsadi shu. Ulasangiz ajratish yo'qoladi,
+shovqin Pico ga o'tadi va uskunadagi nosozlik monoblokni ham kuydirishi mumkin.
+</div>
+
+<h3>PC817 oyoqlari</h3>
+
+<figure>
+<svg viewBox="0 0 760 170" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>PC817 optoparaning oyoqchalari joylashuvi</title>
+<desc>To'rt oyoqli korpus, birinchi oyoq nuqta bilan belgilangan, chap tomonda birinchi va ikkinchi, o'ng tomonda to'rtinchi va uchinchi oyoqlar.</desc>
+<rect x="300" y="45" width="150" height="80" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.8"/>
+<circle cx="318" cy="63" r="4.5" fill="#1C1917"/>
+<text x="375" y="92" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A" font-family="system-ui">PC817</text>
+<rect x="286" y="58" width="14" height="9" fill="#8A857F"/>
+<rect x="286" y="103" width="14" height="9" fill="#8A857F"/>
+<rect x="450" y="58" width="14" height="9" fill="#8A857F"/>
+<rect x="450" y="103" width="14" height="9" fill="#8A857F"/>
+<line x1="200" y1="63" x2="284" y2="63" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="194" y="67" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">1 — LED anod (R1 dan)</text>
+<line x1="200" y1="108" x2="284" y2="108" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="194" y="112" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">2 — LED katod (qora sim)</text>
+<line x1="466" y1="63" x2="550" y2="63" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="558" y="67" font-size="12.5" fill="#1C1917" font-family="system-ui">4 — kollektor (Pico GP2)</text>
+<line x1="466" y1="108" x2="550" y2="108" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="558" y="112" font-size="12.5" fill="#1C1917" font-family="system-ui">3 — emitter (Pico GND)</text>
+<text x="375" y="152" text-anchor="middle" font-size="12" fill="#57534E" font-family="system-ui">Korpusdagi nuqta — 1-oyoq. Oyoqlar soat strelkasiga teskari sanaladi.</text>
+</svg>
+<figcaption>3-rasm. PC817 oyoqlarining joylashuvi (yuqoridan ko'rinish).</figcaption>
+</figure>
+
+<h2 class="pb"><span>4</span> Ulanish jadvali</h2>
+
+<p>Elektrchi uchun asosiy hujjat. Har bir qatorni ulagandan keyin belgilab boring.</p>
+
+<h3>24 V tomoni</h3>
+<table>
+<thead><tr><th class="m">№</th><th>Qayerdan</th><th>Qayerga</th><th>Sim</th></tr></thead>
+<tbody>
+<tr><td class="m">1</td><td>~220 V faza</td><td>Blok pitaniya <code>L</code></td><td>—</td></tr>
+<tr><td class="m">2</td><td>~220 V nol</td><td>Blok pitaniya <code>N</code></td><td>—</td></tr>
+<tr><td class="m">3</td><td>Yer shinasi</td><td>Blok pitaniya <code>PE</code></td><td>sariq-yashil</td></tr>
+<tr><td class="m">4</td><td>Blok pitaniya <code>+V</code></td><td><code>+24 V</code> shina</td><td>qizil</td></tr>
+<tr><td class="m">5</td><td>Blok pitaniya <code>−V</code></td><td><code>0 V</code> shina</td><td>qora/ko'k</td></tr>
+<tr><td class="m">6</td><td>Nurlatgich</td><td><code>+24 V</code> shina</td><td>jigarrang</td></tr>
+<tr><td class="m">7</td><td>Nurlatgich</td><td><code>0 V</code> shina</td><td>ko'k</td></tr>
+<tr><td class="m">8</td><td>Qabul qilgich</td><td><code>+24 V</code> shina</td><td>jigarrang</td></tr>
+<tr><td class="m">9</td><td>Qabul qilgich</td><td><code>0 V</code> shina</td><td>ko'k</td></tr>
+<tr><td class="m">10</td><td><code>+24 V</code> shina</td><td>R1 (4.7 kΩ) bir uchi</td><td>—</td></tr>
+<tr><td class="m">11</td><td>R1 ikkinchi uchi</td><td>PC817 <code>1</code>-oyoq</td><td>—</td></tr>
+<tr class="hl"><td class="m">12</td><td>Qabul qilgich chiqishi</td><td>PC817 <code>2</code>-oyoq</td><td><b>qora</b></td></tr>
+</tbody>
+</table>
+
+<h3>Pico tomoni</h3>
+<table>
+<thead><tr><th class="m">№</th><th>Qayerdan</th><th>Qayerga</th><th class="m">Pin</th></tr></thead>
+<tbody>
+<tr class="hl"><td class="m">13</td><td>PC817 <code>4</code>-oyoq</td><td>Pico <code>GP2</code></td><td class="m">4</td></tr>
+<tr><td class="m">14</td><td>PC817 <code>3</code>-oyoq</td><td>Pico <code>GND</code></td><td class="m">3</td></tr>
+<tr><td class="m">15</td><td>R2 (4.7 kΩ) — ixtiyoriy</td><td>Pico <code>GP2</code> ↔ <code>3V3</code></td><td class="m">4 ↔ 36</td></tr>
+<tr><td class="m">16</td><td>Pico micro-USB</td><td>Monoblok USB porti</td><td>—</td></tr>
+</tbody>
+</table>
+
+<p>Ikkinchi datchik keyinchalik qo'shilsa, uning zanjiri xuddi shunday takrorlanadi,
+faqat ikkinchi PC817 ning kollektori <code>GP3</code> ga (5-pin) ulanadi.</p>
+
+<h3>Pico oyoqlari</h3>
+
+<figure>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Raspberry Pi Pico da ishlatiladigan oyoqchalar</title>
+<desc>Platanig chap tomonidagi uchinchi, to'rtinchi va beshinchi oyoqlari hamda o'ng tomondagi o'ttiz oltinchi oyog'i belgilangan.</desc>
+<rect x="342" y="52" width="36" height="10" rx="2" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.6"/>
+<text x="360" y="44" text-anchor="middle" font-size="12" fill="#57534E" font-family="system-ui">USB</text>
+<rect x="308" y="62" width="104" height="200" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.8"/>
+<text x="360" y="238" text-anchor="middle" font-size="13.5" font-weight="500" fill="#2C2C2A" font-family="system-ui">Pico</text>
+<rect x="304" y="70" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="304" y="96" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="304" y="200" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="402" y="70" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="402" y="96" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="402" y="122" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="402" y="148" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="402" y="200" width="14" height="7" rx="1" fill="#B4B2A9"/>
+<rect x="304" y="122" width="14" height="7" rx="1" fill="#0F6E56"/>
+<rect x="304" y="148" width="14" height="7" rx="1" fill="#0F6E56"/>
+<rect x="304" y="174" width="14" height="7" rx="1" fill="#0F6E56"/>
+<rect x="402" y="174" width="14" height="7" rx="1" fill="#0F6E56"/>
+<line x1="240" y1="126" x2="302" y2="126" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="232" y="130" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">3 — GND · PC817 3-oyoq</text>
+<line x1="240" y1="152" x2="302" y2="152" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="232" y="156" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">4 — GP2 · PC817 4-oyoq</text>
+<line x1="240" y1="178" x2="302" y2="178" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="232" y="182" text-anchor="end" font-size="12.5" fill="#1C1917" font-family="system-ui">5 — GP3 · 2-datchik uchun</text>
+<line x1="418" y1="178" x2="480" y2="178" stroke="#8A857F" stroke-width="0.6" stroke-dasharray="3 3"/>
+<text x="488" y="182" font-size="12.5" fill="#1C1917" font-family="system-ui">36 — 3V3 OUT · R2 uchun</text>
+<text x="488" y="204" font-size="12" fill="#B91C1C" font-family="system-ui">bu yerga 5 V bermang</text>
+</svg>
+<figcaption>4-rasm. Oyoqlar tepadan sanaladi: chapda 1 dan pastga, o'ngda 40 dan pastga.
+Yashil belgilangan to'rttasi ishlatiladi.</figcaption>
+</figure>
+
+<h2 class="pb"><span>5</span> Datchikni mexanik o'rnatish</h2>
+
+<figure>
+<svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Datchikning kirish stolida o'rnatilishi, yon ko'rinish</title>
+<desc>Nurlatgich va qabul qilgich stolning ikki tomonida, nur stol yuzasidan sakkiz-o'n millimetr balandlikda o'tadi va detal uni uzadi.</desc>
+<defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#57534E" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+<rect x="60" y="185" width="640" height="34" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.8"/>
+<text x="380" y="207" text-anchor="middle" font-size="12.5" fill="#5F5E5A" font-family="system-ui">Kirish stoli</text>
+<rect x="230" y="145" width="240" height="40" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+<text x="350" y="169" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="system-ui">Detal</text>
+<rect x="86" y="140" width="40" height="45" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+<rect x="634" y="140" width="40" height="45" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+<line x1="128" y1="165" x2="228" y2="165" stroke="#B91C1C" stroke-width="1.2" stroke-dasharray="6 4"/>
+<line x1="472" y1="165" x2="632" y2="165" stroke="#B91C1C" stroke-width="1.2" stroke-dasharray="6 4"/>
+<text x="106" y="205" text-anchor="middle" font-size="12" fill="#0F6E56" font-family="system-ui">Nurlatgich</text>
+<text x="654" y="205" text-anchor="middle" font-size="12" fill="#0F6E56" font-family="system-ui">Qabul qilgich</text>
+<line x1="180" y1="165" x2="180" y2="185" stroke="#57534E" stroke-width="1" marker-start="url(#a2)" marker-end="url(#a2)"/>
+<text x="190" y="179" font-size="12" fill="#1C1917" font-family="system-ui">8–10 mm</text>
+<line x1="290" y1="118" x2="410" y2="118" stroke="#57534E" stroke-width="1.2" marker-end="url(#a2)"/>
+<text x="350" y="108" text-anchor="middle" font-size="12" fill="#57534E" font-family="system-ui">harakat yo'nalishi</text>
+<text x="380" y="245" text-anchor="middle" font-size="12" fill="#B91C1C" font-family="system-ui">Nur detal tomonidan uzilgan holat — chiqish shu paytda faol bo'lishi kerak</text>
+</svg>
+<figcaption>5-rasm. Yon ko'rinish. Nur stol yuzasidan 8–10 mm balandlikda o'tadi.</figcaption>
+</figure>
+
+<ol class="steps">
+<li><b>Joyni tanlang.</b> Datchikni stanok ichida emas, <b>kirish stolida</b> o'rnating — u yerda joy bor, chang va yelim tumani kamroq.</li>
+<li><b>Balandlikni belgilang.</b> Nur stol yuzasidan 8–10 mm balandlikda o'tsin. Pastroq bo'lsa stoldagi qirindi soxta ishga tushiradi, balandroq bo'lsa yupqa panel uzmay o'tib ketadi.</li>
+<li><b>Perpendikulyarlikni ta'minlang.</b> Nur harakat yo'nalishiga aniq 90° ostida bo'lsin. Qiyshiq bo'lsa o'lchov uzayadi.</li>
+<li><b>Tekislang.</b> Qabul qilgichdagi indikator chiroqqa qarab nurlatgichni burang — chiroq barqaror yonganda tekislash tugagan.</li>
+<li><b>L/D pereklyuchatelni <code>D</code> (Dark-ON) ga qo'ying.</b> Shunda chiqish nur uzilgan paytda faol bo'ladi.</li>
+</ol>
+
+<h2><span>6</span> Montaj tartibi</h2>
+
+<ol class="steps">
+<li><b>Blok pitaniyani o'rnating.</b> DIN reykaga mahkamlang, 220 V ni ulang, yerga ulanishni unutmang. Multimetr bilan chiqishda 24 V borligini tekshiring.</li>
+<li><b>Datchiklarni o'rnating</b> — 5-bo'limga qarang.</li>
+<li><b>Datchik simlarini ulang</b> — jadvaldagi 6–9-qatorlar. Qabul qilgichdagi indikator yonishi kerak.</li>
+<li><b>PC817 ni lehimlang.</b> Maketka plataga PC817 va R1 ni o'rnating. 1-oyoq korpusdagi nuqta bilan belgilangan.</li>
+<li><b>R1 va qora simni ulang</b> — jadvaldagi 10–12-qatorlar.</li>
+<li><b>Pico ni tayyorlang.</b> BOOTSEL tugmasini bosib turib USB ga ulang → <code>RPI-RP2</code> diski chiqadi. MicroPython <code>.uf2</code> faylini shu diskka ko'chiring. So'ng Thonny orqali <code>main.py</code> ni Pico ga saqlang.</li>
+<li><b>Pico ni ulang</b> — jadvaldagi 13–14-qatorlar. Simlarni platadagi teshiklarga kiritib, orqa tomondan lehimlang.</li>
+<li><b>Korpusga joylashtiring.</b> Pico va PC817 platasini plastik korpusga joylang, simlarni klemma kolodkaga chiqaring.</li>
+<li><b>USB kabelni tortib, mahkamlang.</b> Kabelni platadan 10 sm narida xomut bilan qotiring — tortilganda kuch razyomga tushmasin.</li>
+</ol>
+
+<h2><span>7</span> Ishga tushirish va tekshirish</h2>
+
+<ul class="chk">
+<li><b>Test 1.</b> Nurni qo'l bilan to'sing — qabul qilgichdagi indikator holatini o'zgartirsin.</li>
+<li><b>Test 2.</b> Multimetrni qora sim va <code>0 V</code> orasiga qo'ying. Nur ochiq — 24 V, nur to'silgan — 0 V ga yaqin. Teskari bo'lsa, L/D pereklyuchatelni almashtiring.</li>
+<li><b>Test 3.</b> Nurni to'sing — Pico platasidagi yashil LED yonsin. Yonmasa PC817 yoki R1 ulanishini tekshiring.</li>
+<li><b>Test 4.</b> Thonny ning konsolida yoki serial monitorda <code>{"ch":1,"e":0,"d":...}</code> ko'rinishidagi xabarlar chiqsin.</li>
+<li><b>Test 5.</b> Brauzerda stansiya sahifasini oching, "Pico ga ulanish" tugmasini bosing, portni tanlang.</li>
+<li><b>Test 6.</b> Ma'lum uzunlikdagi etalon detalni 20 marta o'tkazing va tarqoqlikni baholang.</li>
+</ul>
+
+<h2><span>8</span> Nosozliklar</h2>
+
+<table>
+<thead><tr><th>Alomat</th><th>Ehtimoliy sabab</th><th>Yechim</th></tr></thead>
+<tbody>
+<tr><td>Pico kompyuterda ko'rinmaydi</td><td>Kabel faqat quvvat uzatadi</td><td>Data kabel bilan almashtiring</td></tr>
+<tr><td>Pico LED doim yonib turadi</td><td>L/D teskari qo'yilgan</td><td><code>D</code> ga qo'ying yoki <code>main.py</code> da <code>FAOL_PAST = False</code></td></tr>
+<tr><td>Hech qanday xabar kelmaydi</td><td>Qora sim yoki R1 ulanmagan</td><td>Test 2 va 3 ni takrorlang</td></tr>
+<tr><td>Bitta o'tkazishda 2–3 xabar</td><td>Titrash yoki chang</td><td><code>MIN_US</code> ni oshiring, linzani arting</td></tr>
+<tr><td>Qiymatlar doimiy xato</td><td>Tezlik noto'g'ri</td><td>Etalon detal bilan kalibrlang</td></tr>
+<tr><td>Aloqa uzilib turadi</td><td>USB razyomi bo'shagan</td><td>Kabelni xomut bilan mahkamlang</td></tr>
+<tr><td>Tasodifiy soxta o'tkazishlar</td><td>Nur yo'lida qirindi to'plangan</td><td>Nur balandligini oshiring, stolni tozalang</td></tr>
+</tbody>
+</table>
+
+<div class="box dan">
+<b>Xavfsizlik</b>
+220 V zanjirida ishlashdan oldin avtomatni o'chiring va kuchlanish yo'qligini tekshiring.
+Blok pitaniyaning korpusi va metall shchit yerga ulangan bo'lishi shart.
+Pico ning oyoqchalariga 5 V yoki 24 V bermang — ular faqat 3.3 V ga mo'ljallangan.
+</div>
+
+<div class="box">
+<b>Keyingi bosqich</b>
+Ikkinchi datchik qo'shilganda: uni birinchisidan aniq o'lchangan masofada o'rnating,
+ikkinchi PC817 zanjirini yig'ing va kollektorini <code>GP3</code> (5-pin) ga ulang.
+Stansiya sahifasi sozlamalarida "2-datchik rejimi" ni yoqib, o'sha masofani millimetrda kiriting.
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,6 @@
+server/mes.db
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+server/image.png
