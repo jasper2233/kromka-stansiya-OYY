@@ -314,6 +314,7 @@ function handle(line){
     case 'kalib':if(kalibOn){kalPts.push({...m,L_ref:nv($('lref'),0)});renderKal();}break;
     case 'ogoh':onOgoh(m);break;
     case 'avariya_toxtash':onToxtash(m);break;
+    case 'tiqilish':onTiqilish(m);break;
   }
 }
 // Stansiya ulanmagan paytda Pico o'zida yig'gan hodisa: ekranga signal bermaymiz, faqat MES ga
@@ -328,6 +329,8 @@ function eskiHodisa(m){
   else if(m.ev==='ogoh')queue({type:'ogoh',ch:m.ch,sabab:m.sabab,q:m.q,xotiradan:1},ts);
   else if(m.ev==='avariya_toxtash'){queue({type:'avariya_toxtash',d1:m.d1,d2:m.d2,oraliq:m.oraliq,birga:m.birga,xotiradan:1},ts);
     log.unshift({type:'avariya_toxtash',ts,cls:'bad',matn:toxtashMatn(m)+' (xotiradan)'});renderLog();}
+  else if(m.ev==='tiqilish'){queue({type:'tiqilish',sabab:m.sabab,n:m.n,L1:m.L1,L2:m.L2,xotiradan:1},ts);
+    log.unshift({type:'tiqilish',ts,cls:'bad',matn:tiqilishMatn(m)+' (xotiradan)'});renderLog();}
 }
 function onOlchov(m){
   let verd='SKANERSIZ',side=null,delta=null,cls='warn',exp=null;
@@ -354,6 +357,19 @@ function toxtashMatn(m){const j=[];
 function onToxtash(m){const t=toxtashMatn(m);$('mVal').textContent='—';
   alarmUI(true,'AVARIYALI TO\'XTASH',t+' — o\'lchov bekor qilindi');verdict('bad','Avariyali to\'xtash',t+' — o\'lchov bekor');
   queue({type:'avariya_toxtash',d1:m.d1,d2:m.d2,oraliq:m.oraliq,birga:m.birga});log.unshift({type:'avariya_toxtash',ts:new Date(),cls:'bad',matn:t});renderLog();
+}
+// Detallar tiqilib, D1 va D2 vaqtlari bir detalga to'g'ri kelmadi (v1.16).
+// Soxta o'lcham chiqarmaymiz — operatorga tiqilishni ko'rsatamiz.
+function tiqilishMatn(m){
+  const l1=(m.L1||[]).map(x=>Math.round(x)).join(' + ');
+  return m.sabab==='birga_otdi'
+    ? m.n+' ta detal birga o\'tdi (D2 '+Math.round(m.L2)+' mm, D1 bo\'yicha '+l1+')'
+    : 'D1 va D2 vaqtlari mos kelmadi (D1 '+l1+' mm, D2 '+Math.round(m.L2)+' mm) — detal tiqilib qolgan';
+}
+function onTiqilish(m){const t=tiqilishMatn(m);$('mVal').textContent='—';
+  alarmUI(true,'TIQILISH',t+' — o\'lchov bekor');verdict('bad','Tiqilish',t);
+  queue({type:'tiqilish',sabab:m.sabab,n:m.n,L1:m.L1,L2:m.L2});
+  log.unshift({type:'tiqilish',ts:new Date(),cls:'bad',matn:t});renderLog();
 }
 function onOgoh(m){
   const t={javob_yoq:'javob bermayapti',yopishib_qolgan:'yopishib qolgan (chang?)',iflos:'ifloslangan — linzani tozalang',tezlik_nomuvofiq:'tezlik nomuvofiq — tezlik simini tekshiring'}[m.sabab]||m.sabab;
@@ -619,6 +635,7 @@ $('kalClr').onclick=()=>{kalPts=[];renderKal();};
 function renderLog(){$('log').innerHTML=log.length?log.slice(0,80).map((r,i)=>{
   if(r.type==='ogoh')return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td colspan="6">datchik ${r.ch}: ${r.sabab}</td><td class="bad">OGOH</td></tr>`;
   if(r.type==='avariya_toxtash')return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td colspan="6">stanok to'xtadi: ${r.matn} — o'lchov bekor</td><td class="bad">AVARIYA</td></tr>`;
+  if(r.type==='tiqilish')return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td colspan="6">${r.matn}</td><td class="bad">TIQILISH</td></tr>`;
   const c=r.verdict==='MOS'?'ok':r.verdict==='NOMOS'?'bad':'warn';
   return`<tr><td>${log.length-i}</td><td>${r.ts.toLocaleTimeString('uz')}</td><td>${r.qr||'—'}</td><td>${r.expected_mm??'—'}</td><td>${r.measured_mm.toFixed(1)}</td><td>${r.delta_mm!=null?r.delta_mm.toFixed(1):'—'}</td><td>${r.L1??'—'}/${r.L2??'—'}</td><td>${r.v_meas??r.v_nom}</td><td class="${r.pico_kod!=='OK'?'bad':c}">${r.verdict}${r.pico_kod!=='OK'?' '+r.pico_kod:''}</td></tr>`;}).join('')
   :'<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:16px 0">O\'tkazish yo\'q</td></tr>';}

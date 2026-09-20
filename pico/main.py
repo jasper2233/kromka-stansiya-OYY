@@ -1,4 +1,4 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.15)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.16)
 #
 # OYOQCHALAR — TZ 3-bo'lim, boshqa pin ishlatilmaydi:
 #   GP1  (2-pin)   <- datchik 1 optopara 4-oyoq   (kirish)
@@ -148,7 +148,7 @@ def signal(yon, hz=None):
 # Xotira — RAM: Pico ga tok kelib turguncha saqlanadi.
 XOST_MS    = 3000
 XOTIRA_MAX = 300
-YIGILADI   = ('olchov', 'ogoh', 'avariya_toxtash', 'uskuna')
+YIGILADI   = ('olchov', 'ogoh', 'avariya_toxtash', 'tiqilish', 'uskuna')
 XOST       = {'oxir': None, 'yoqolgan': 0}
 yigilgan   = []            # (ticks_ms, json matn)
 
@@ -241,6 +241,15 @@ kuzat = {1: {'us': None, 'ms': None, 'yopiq': False, 'stuck': False, 'bekor': Fa
 # D1 dan o'tib bo'lgan, D2 ni kutayotgan detallar navbati (FIFO).
 kutuv = []
 KUTUV_MAX = 12       # oraliqqa sig'adigan detaldan ko'p bo'lsa — nimadir noto'g'ri
+
+# JUFTLASHNI TEKSHIRISH (v1.16). Bitta detalning D1 va D2 dagi vaqti deyarli
+# bir xil bo'ladi. Katta farq — bu boshqa detal: tiqilib birga o'tgan, yoki
+# datchik ostida to'xtab qolgan. Linza ifloslanishi millimetr beradi (TD),
+# tiqilish esa o'nlab santimetr — shuning uchun chegara keng.
+JUFT_TOL  = 0.25     # 25% nisbiy chegara (kichik uzunlikdan)
+JUFT_MIN  = 30.0     # kamida shuncha mm — qisqa detallar uchun
+TIQ_MAX   = 4        # oraliqqa sig'adigan detal soni (D=2555 mm)
+KUT_KARRA = 5        # D2 ni kutish muddati: D/v ning shuncha karrasi (~78 s)
 
 def qur(kanal, gpio):
     p = Pin(gpio, Pin.IN, Pin.PULL_UP)
@@ -437,21 +446,130 @@ def d1_tugadi(us, ms, dur, bekor=False):
         if not r['bekor']:
             yakunla(r, None, None)
 
+def _mm(dur_us, S):
+    """Nur to'silgan vaqtdan taxminiy uzunlik (mm) — juftlashni tekshirish uchun.
+    Aniq o'lchov emas: nominal tezlik bilan, tuzatmalarsiz."""
+    v = KAL['V18'] if S == 18 else KAL['V10']
+    return dur_us * v / 60000.0
+
+def _yaqin(a, b):
+    """Ikki uzunlik bitta detalga tegishli bo'la oladimi.
+    Chegara — nisbiy (JUFT_TOL, KICHIGIDAN hisoblanadi) yoki kamida JUFT_MIN mm.
+    Kichigidan olinadi: aks holda 400 va 1600 mm ham "yaqin" bo'lib qolardi.
+    Linza ifloslanishi millimetrlar beradi (TD), tiqilish esa o'nlab santimetr."""
+    return abs(a - b) <= max(JUFT_MIN, JUFT_TOL * min(a, b))
+
+def juftni_tanla(d2_mm):
+    """Navbatdan shu D2 o'lchoviga mos yozuvni tanlaydi.
+
+    Qaytaradi (turi, yozuvlar):
+      'juft'     [r]            — bitta detal, normal juftlik
+      'tiqilish' [r1, r2, ...]  — detallar BIRGA o'tgan (bir-biriga tiqilib)
+      'yoqolgan' [r1, .., rn]   — oldingilari yo'qolgan, oxirgisi mos keldi
+      'mos_yoq'  []             — navbatda mos yozuv yo'q
+    """
+    if not kutuv:
+        return ('mos_yoq', [])
+    if _yaqin(_mm(kutuv[0]['dur'], kutuv[0]['S']), d2_mm):
+        return ('juft', kutuv[:1])
+    yigindi = _mm(kutuv[0]['dur'], kutuv[0]['S'])
+    for i in range(1, min(len(kutuv), TIQ_MAX)):
+        yigindi += _mm(kutuv[i]['dur'], kutuv[i]['S'])
+        if _yaqin(yigindi, d2_mm):
+            return ('tiqilish', kutuv[:i + 1])
+    for i in range(1, min(len(kutuv), TIQ_MAX + 1)):
+        if _yaqin(_mm(kutuv[i]['dur'], kutuv[i]['S']), d2_mm):
+            return ('yoqolgan', kutuv[:i + 1])
+    return ('mos_yoq', [])
+
+def tiqilish_qayd(sabab, rlar, d2_mm):
+    """O'lchab bo'lmaydigan holat: detallar birga o'tgan yoki datchik ostida
+    to'xtab qolgan. Soxta o'lcham chiqarmaymiz — hodisa va avariya beramiz."""
+    yubor({'ev': 'tiqilish', 'sabab': sabab, 'n': len(rlar),
+           'L2': round(d2_mm, 1),
+           'L1': [round(_mm(r['dur'], r['S']), 1) for r in rlar]})
+    chop("  !! TIQILISH (%s): D2 %.0f mm, navbatdagi %d ta detal o'lchanmadi"
+         % (sabab, d2_mm, len(rlar)))
+    avariya_boshla()
+
 def d2_tugadi(us, dur, bekor=False, juft_d1=False):
-    """D2 detalni o'tkazdi — navbatdagi ENG ESKI yozuv bilan juftlaymiz."""
-    r = kutuv.pop(0) if (kutuv and not juft_d1) else None
-    if bekor or (r is not None and r['bekor']):
+    """D2 detalni o'tkazdi — navbatdagi ENG ESKI yozuv bilan juftlaymiz.
+
+    Juftlashdan OLDIN uzunliklar solishtiriladi: D1 dagi vaqt D2 dagiga
+    yaqin bo'lmasa, bu bitta detal emas (tiqilish, birga o'tish, datchik
+    ostida to'xtash). Ilgari tekshiruv yo'q edi va navbat siljiganda har bir
+    keyingi o'lchov boshqa detalning D1 yozuvi bilan juftlanib ketardi.
+    """
+    # Avariyali to'xtashda ilingan detallar: vaqtlari buzilgan (datchik ostida
+    # turib qolgan), shuning uchun uzunlik bo'yicha solishtirib bo'lmaydi —
+    # navbat tartibi bo'yicha jimgina chiqaramiz.
+    if bekor or (kutuv and kutuv[0]['bekor'] and not juft_d1):
+        if kutuv and not juft_d1:
+            kutuv.pop(0)
         chop("  > D2: detal bekor (avariyali to'xtash)")
         return
-    yakunla(r, dur, us)                  # r = None — D1 bu detalni ko'rmagan
+
+    d2_mm = _mm(dur, tezlik_nom())
+    if juft_d1:
+        turi, rlar = ('mos_yoq', [])
+    elif kutuv and kutuv[0]['S'] != tezlik_nom():
+        # Detal yo'lda ekan tezlik almashgan — nominal tezlik bilan hisoblangan
+        # uzunliklarni solishtirib bo'lmaydi. Navbat tartibiga ishonamiz.
+        turi, rlar = ('juft', kutuv[:1])
+    else:
+        turi, rlar = juftni_tanla(d2_mm)
+
+    for _ in rlar:                       # tanlangan yozuvlar navbatdan chiqadi
+        kutuv.pop(0)
+
+    if any(r['bekor'] for r in rlar):
+        chop("  > D2: detal bekor (avariyali to'xtash)")
+        return
+
+    if turi == 'juft':
+        yakunla(rlar[0], dur, us)
+        return
+    if turi == 'tiqilish':
+        tiqilish_qayd('birga_otdi', rlar, d2_mm)
+        return
+    if turi == 'yoqolgan':
+        for r in rlar[:-1]:              # yo'qolganlar: D1 ko'rgan, D2 ko'rmagan
+            yakunla(r, None, None)
+        yakunla(rlar[-1], dur, us)
+        return
+    # mos_yoq: navbat bo'sh bo'lsa — D1 bu detalni ko'rmagan (FAQAT2).
+    # Navbat bo'sh bo'lmasa — vaqtlar mos kelmadi: o'lchov ishonchsiz.
+    if kutuv:
+        r = kutuv.pop(0)
+        if not r['bekor']:
+            tiqilish_qayd('vaqt_mos_emas', [r], d2_mm)
+        return
+    yakunla(None, dur, us)
 
 def kutuvni_tekshir(hozir_ms):
-    """Navbat boshidagi yozuv juda uzoq kutdimi — D2 uni ko'rmagan."""
-    if not ishlayapti():
+    """Navbatni kuzatadi. VAQT BO'YICHA HECH NARSA TASHLANMAYDI.
+
+    Ilgari navbat boshi `d2_kutish_ms` (10 m/min da ~23 s) dan uzoq kutsa,
+    yozuv tashlanib FAQAT1 chiqardi. Tiqilishda detal D1 dan o'tib D2 ga
+    yetmay turib qolardi — muddat tugab yozuv tashlanar, keyin kelgan har bir
+    D2 o'lchovi BOSHQA detalning D1 yozuvi bilan juftlanardi. Natijada faqat
+    oxirgi detal to'g'ri o'lchanib, qolganlari xato chiqardi (2026-09-20).
+
+    Endi muddat KUT_KARRA marta uzunroq (10 m/min da ~78 s) va faqat quyidagi
+    shartlarda sanaladi: stanok ishlayapti VA hech bir datchik ostida detal
+    turmagan. Tiqilish odatda shu ikki belgidan biri bilan ko'rinadi.
+    Muddat tugasa yozuv FAQAT1 bo'lib chiqadi (D2 datchigi o'lgan bo'lishi
+    mumkin — `yakunla` ichidagi hisoblagich 3 tadan keyin ogoh beradi), lekin
+    endi kech kelgan detal keyingi yozuv bilan juftlanmaydi: uzunlik
+    tekshiruvi uni ushlaydi.
+    """
+    if not ishlayapti() or not kutuv:
         return                           # lenta turibdi — kutish hisoblanmaydi
+    if kuzat[1]['yopiq'] or kuzat[2]['yopiq']:
+        return                           # datchik ostida detal turibdi — tiqilish
     while kutuv:
         r = kutuv[0]
-        if time.ticks_diff(hozir_ms, r['ms']) > d2_kutish_ms(r['S']):
+        if time.ticks_diff(hozir_ms, r['ms']) > d2_kutish_ms(r['S']) * KUT_KARRA:
             kutuv.pop(0)
             if not r['bekor']:
                 yakunla(r, None, None)
@@ -492,12 +610,19 @@ def yakunla(r1, d2, us2):
     if dtc and dtc > 0 and KAL['D'] > 0:
         v_mm_us = KAL['D'] / dtc
         v_olch = v_mm_us * 60000.0
-        yangi = 1
-        xotira.append(v_olch)
-        if len(xotira) > XOTIRA_N:
-            xotira.pop(0)
         if v_eff_S > 0 and abs(v_olch - v_eff_S) / v_eff_S * 100.0 > TOL_TEZLIK:
+            # O'lchangan tezlik nominaldan juda uzoq — ishonchsiz. Shunday
+            # bo'ladi: detal D1 dan o'tib, oraliqda tiqilib turib qoladi, keyin
+            # yo'lida davom etadi — dt shu turgan vaqtni ham o'z ichiga oladi.
+            # Detalning O'ZI datchik ostidan to'liq tezlikda o'tgan, shuning
+            # uchun t1/t2 to'g'ri: uzunlikni NOMINAL tezlik bilan hisoblaymiz.
             ogoh(0, 'tezlik_nomuvofiq', v_olch)
+            v_mm_us = v_eff_S / 60000.0
+        else:
+            yangi = 1
+            xotira.append(v_olch)
+            if len(xotira) > XOTIRA_N:
+                xotira.pop(0)
     else:
         v_mm_us = v_eff_S / 60000.0
 
@@ -633,14 +758,14 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.15'})
+                  'ver': '1.16'})
         yubor(d)
 
 # ================= BOSHLANISH =================
 yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.15")
+    print("  KROMKA STANSIYASI KONTROLLERI  v1.16")
     print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  AUDIO=GP%d"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")

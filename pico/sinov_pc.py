@@ -95,8 +95,11 @@ class Lenta:
         self.detal = []           # [old_qirra_x, L]; D1 x=0, D2 x=D_HAQ
         self.run = False; self.v18 = False
         self.d2_kor = True
+        self.tiq = False          # tiqilish: stanok yonib turibdi, lekin detal yurmayapti
         self.pin_run(); self.datchik()
     def v_mm_s(self):
+        if self.tiq:
+            return 0.0
         if not self.run and not self.v18:
             return 0.0
         return (18.227 if self.v18 else 10.151) * 1000 / 60
@@ -338,7 +341,10 @@ def S22():
 def S23():
     l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
     l.d2_kor = False
-    l.qoy(500); l.yur(40000)
+    # v1.16 dan boshlab D2 ni kutish muddati uzaytirildi (KUT_KARRA=5, ~78 s):
+    # tiqilib qolgan detal navbatdan tushib qolmasligi uchun. Shuning uchun
+    # sinov ham uzoqroq yuradi.
+    l.qoy(500); l.yur(130000)
     o = olchovlar()
     tekshir('23 D2 ko\'rmasa FAQAT1 hali ham ishlaydi', len(o) == 1 and o[0]['kod'] == 'FAQAT1' and not toxtashlar(), CHIQ)
 
@@ -505,6 +511,46 @@ def tasodifiy(seed):
     return ok, {'kutilgan': kutilgan, 'olchandi': olch, 'kodlar': [e['kod'] for e in o],
                 'toxtash': (len(toxtashlar()), toxtash_kerak), 'ogoh': ogohlar(),
                 'bekor': sum(r[2] for r in detallar), 'jami': len(detallar)}
+
+def S33():
+    # TIQILISH: detal D1 dan o'tib, oraliqda uzoq turib qoldi (stanok yonib turibdi).
+    # Eski mantiqda navbat muddati tugab yozuv tashlanardi va keyingi o'lchovlar
+    # siljib ketardi. Endi navbat kutadi, detal kelganda to'g'ri juftlanadi.
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    l.qoy(500); yetib_bor(l, 700)          # D1 dan butunlay o'tdi
+    l.tiq = True; l.yur(60000)             # 60 s tiqilib turdi (eski muddat ~23 s)
+    l.tiq = False; l.yur(40000)
+    o = olchovlar()
+    tekshir('33 tiqilish: oraliqda 60 s turgan detal keyin to\'g\'ri o\'lchandi',
+            len(o) == 1 and o[0]['kod'] == 'OK' and abs(o[0]['L'] - 500) < 15, CHIQ)
+
+def S34():
+    # TIQILISH: ikki detal bir-biriga tiqilib, D2 dan BIRGA o'tdi.
+    # Soxta o'lcham chiqmasligi kerak — "tiqilish" hodisasi va avariya.
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    l.qoy(500); yetib_bor(l, 900)
+    l.qoy(600)
+    while l.detal[-1][0] < 900:            # ikkinchisi ham D1 dan butunlay o'tsin
+        l.yur(5)
+    l.detal[1][0] = l.detal[0][0] - l.detal[0][1]   # ikkinchisi birinchisiga tiqildi
+    l.yur(40000)
+    tq = [e for e in CHIQ if e['ev'] == 'tiqilish']
+    tekshir('34 tiqilish: ikki detal birga o\'tdi — soxta o\'lcham yo\'q',
+            not olchovlar() and len(tq) == 1 and tq[0]['n'] == 2 and avariya_yoniq(), CHIQ)
+
+def S35():
+    # Birinchi detal yo'ldan olib qo'yildi. Ikkinchisi O'ZINING yozuvi bilan
+    # juftlanishi kerak (eski mantiqda birinchisining yozuvi bilan qo'shilib ketardi).
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    l.qoy(400); yetib_bor(l, 600)
+    l.qoy(1200); yetib_bor(l, 1400)
+    l.detal.pop(0)                          # birinchisi olib qo'yildi
+    l.yur(40000)
+    o = olchovlar()
+    kod = [e['kod'] for e in o]
+    tekshir('35 yo\'qolgan detal keyingisining o\'lchoviga qo\'shilib ketmaydi',
+            len(o) == 2 and kod[0] == 'FAQAT1' and abs(o[0]['L'] - 400) < 15
+            and kod[1] == 'OK' and abs(o[1]['L'] - 1200) < 20, CHIQ)
 
 if __name__ == '__main__':
     N = int(sys.argv[1]) if len(sys.argv) > 1 else 0
