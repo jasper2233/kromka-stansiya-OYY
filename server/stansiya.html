@@ -217,7 +217,7 @@ async function openPort(p){
     port=null;                      // ochilmadi — qayta urinish uchun bo'sh qoldiramiz
     throw e;
   }
-  alive=true;writer=port.writable.getWriter();
+  alive=true;writer=port.writable.getWriter();qabul();
   $('picoLed').className='led on';$('picoTxt').textContent='Pico ulangan';$('picoChip').className='chip ok';$('conn').textContent='Uzish';
   verdict('','Tayyor','QR kodni skanerlang');
   navigator.locks?.request('stansiya',()=>new Promise(()=>{}));
@@ -229,6 +229,33 @@ let picoOxirgi=null;
 function picoHolat(h){if(picoOxirgi===h)return;picoOxirgi=h;queue({type:'pico',holat:h});}
 // Yurak urishi: Pico shu kelib turgancha stansiya bor deb biladi; 3 s kelmasa o'lchovlarni o'zida yig'adi
 setInterval(()=>{if(writer)send('HB');},1000);
+
+/* ---------- JIMLIK NAZORATI (aloqa o'lganini sezish) ----------
+   Pico o'zidan davriy xabar yubormaydi: stanok tursa, liniya butunlay jim
+   bo'ladi. Shuning uchun "port ochiq ko'rinadi, lekin aloqa aslida o'lgan"
+   holatini sahifa umuman sezmasdi — na xato, na `done` keladi. Sabablari:
+   Windows USB portni uyquga qo'ygan (selective suspend), CDC drayveri qotgan,
+   Chrome yorliqni muzlatgan. Natijada operator USB ni sug'urib-ulamaguncha
+   MES ga hech narsa bormasdi (Pico esa o'lchashda davom etib, xotiraga yig'ardi).
+   Endi: JIM_MS jim tursa PING yuboramiz — Pico `pong` bilan darhol javob beradi
+   (u xotiraga yig'iladigan hodisa emas). JAVOB_MS ichida javob bo'lmasa — port
+   majburan yopilib, qaytadan ulanadi. */
+const JIM_MS=6000, JAVOB_MS=4000;
+let oxirgiQabul=0, pingVaqt=0;
+function qabul(){oxirgiQabul=Date.now();pingVaqt=0;}
+async function qaytaUlan(){
+  alive=false;await yopPort();picoHolat(0);
+  $('picoLed').className='led';$('picoChip').className='chip bad';$('picoTxt').textContent='Pico jim — qayta ulanmoqda';
+  setTimeout(autoConnect,500);
+}
+setInterval(async()=>{
+  if(!port||!alive)return;
+  if(pingVaqt){                                   // PING yuborilgan, javob kutilyapti
+    if(Date.now()-pingVaqt>JAVOB_MS){pingVaqt=0;await qaytaUlan();}
+    return;
+  }
+  if(Date.now()-oxirgiQabul>JIM_MS){pingVaqt=Date.now();send('PING');}
+},2000);
 const PICO_VID=0x2E8A;              // Raspberry Pi — Pico USB CDC
 function piconiTanla(ports){
   return ports.find(x=>{try{return x.getInfo().usbVendorId===PICO_VID;}catch(e){return false;}})||ports[0]||null;
@@ -255,7 +282,7 @@ function kalQiymat(){return{D:nv($('kD'),2555),V10:nv($('kV10'),10),V18:nv($('kV
 function sendSet(){send('SET '+Object.entries(kalQiymat()).map(([k,v])=>k+'='+v).join(' '));}
 async function readLoop(){
   const dec=new TextDecoderStream();port.readable.pipeTo(dec.writable).catch(()=>{});reader=dec.readable.getReader();
-  try{while(alive){const{value,done}=await reader.read();if(done)break;rx+=value;let i;
+  try{while(alive){const{value,done}=await reader.read();if(done)break;rx+=value;qabul();let i;
     while((i=rx.indexOf('\n'))>=0){const line=rx.slice(0,i).trim();rx=rx.slice(i+1);if(line.startsWith('{'))handle(line);}}}catch(e){}
   if(alive){
     // Aloqa uzildi (Pico qayta yuklandi, USB tebrandi). Portni to'liq yopib, o'zgaruvchilarni

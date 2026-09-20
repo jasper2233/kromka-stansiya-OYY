@@ -39,7 +39,12 @@ if not defined CHROME (
 
 rem --user-data-dir: alohida profil. Pico portiga berilgan ruxsat shu yerda
 rem saqlanadi, shuning uchun ruxsat FAQAT BIR MARTA soraladi.
-start "" %CHROME% --kiosk --user-data-dir="%PROFIL%" --no-first-run --no-default-browser-check --noerrdialogs --disable-session-crashed-bubble --disable-background-timer-throttling "%URL%"
+rem Chrome yorliqni fonda sekinlatmasin: kiosk oynasi ustini boshqa oyna yopsa
+rem yoki ekran o'chsa, Chrome taymerlarni daqiqada bir martaga tushiradi va
+rem hatto yorliqni muzlatadi. Shunda stansiya Pico ga "HB" yubormay qoladi,
+rem MES ga ham ma'lumot bormaydi. Quyidagi bayroqlar buni to'xtatadi.
+set "BAYROQ=--kiosk --no-first-run --no-default-browser-check --noerrdialogs --disable-session-crashed-bubble --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=IntensiveWakeUpThrottling,CalculateNativeWinOcclusion,HighEfficiencyModeAvailable"
+start "" %CHROME% --user-data-dir="%PROFIL%" %BAYROQ% "%URL%"
 
 exit /b 0
 
