@@ -122,12 +122,29 @@ GP0 dagi bitta rele. Lampa va tovush **doim birga** — `signal(yon)` bitta chaq
 
 Stansiya har 60 s `settings` ni so'raydi; `updated` o'zgarsa Pico ga `SET`. Hodisalar IndexedDB navbatda, faqat `ack` dan keyin o'chadi.
 
-## Joriy holat (2026-09-16)
+## Joriy holat (2026-09-20)
+
+### 2026-09-20: "MES ga ma'lumot bormay qoldi" — sabab va yechim
+
+Shikoyat: monoblokda tizim ochiq tursa ham Pico "yo'q" bo'lib qolardi, MES ga hech narsa bormasdi; USB ni sug'urib-ulagandan keyin qaytadan ishlardi.
+
+Dalillar:
+- Bugungi 21 ta o'lchovning **hammasi `xotiradan: 1`** — Pico ishlagan va o'lchagan, lekin stansiya u bilan gaplashmagan. Ma'lumot yo'qolmagan (RAM xotira ishladi).
+- Windows jurnali (42/107-hodisa): **monoblok kuniga bir necha marta uyquga tushgan** (9:50, 11:57, 14:57, 17:34). Uyqudan keyin CDC porti tiklanmaydi.
+- **USB selective suspend yoqilgan edi** — jim turgan port uyquga qo'yilardi.
+- Kiosk **`shell:startup` da yo'q edi** — kompyuter qayta yonsa stansiya o'zi ochilmasdi.
+- Stansiyada **jimlik nazorati yo'q edi**: Pico o'zidan davriy xabar yubormaydi, shuning uchun "port ochiq, lekin aloqa o'lgan" holati sezilmasdi (na xato, na `done`).
+
+Qilingan ishlar:
+- Windows: uyqu va gibernatsiya o'chirildi (`standby/hibernate-timeout-ac 0`), **USB selective suspend o'chirildi**, kiosk yorlig'i `shell:startup` ga qo'yildi.
+- `stansiya.html`: **jimlik nazorati** — 6 s jim tursa `PING`, 4 s ichida javob bo'lmasa portni yopib qayta ulaydi. Uzilganda yorliqda "Pico jim — qayta ulanmoqda".
+- `kiosk_ishga_tushirish.bat`: Chrome fon bayroqlari (occluded windows, IntensiveWakeUpThrottling, memory saver o'chirildi) — yorliq muzlatilmasin.
+- Proshivka **v1.15**: stansiya jim bo'lsa USB ga **umuman yozilmaydi** (`yubor` va `chop` ikkalasi ham) — o'qilmayotgan portga yozish CDC buferini to'ldirib, `print()` da butun dasturni qotirishi mumkin edi. **Qorovul (WDT 8 s)** qo'shildi: birinchi marta stansiya gapirgandan keyin yoqiladi (Thonny/mpremote da yoqilmaydi), qotib qolsa Pico qayta yuklanadi va USB qayta ro'yxatdan o'tadi.
 
 - Apparat yig'ilgan, Pico o'lchayapti, datchiklar ishlaydi, rele ishlaydi.
 - **Usilitel ishlaydi** — tovush bor, avariya va QR signallari eshitiladi.
 - Sinov MES + stansiya + tablo ishlagan. QR skaner sinalgan.
-- Pico da proshivka **v1.14** (2026-09-17): rele mantiqi teskari (`RELE_YOQ=1`) — Low trigger deb yozilgan edi, lampa NO kontaktda ovozga teskari yonardi. v1.13: stansiyasiz xotiraga yig'ish (`HB`), `kal.json`, alohida ohang `HQ/HA`, avariya ovozsiz rejimi `AV`. `pico/sinov_pc.py` 32 ssenariy o'tdi. v1.12 (arxivda): avariyali to'xtash, yangi QR/avariya signallari, sikl `qadam()` funksiyasida (sinov uchun). v1.11 (arxivda): v1.10 + `B1/B2`. v1.10: uzun detal (L > D) navbat muddati tuzatildi. v1.9 (2026-09-16 yozildi, `PING`/`HOLAT`/`SET` va `signal_test.py` o'tdi). v1.9 = v1.8 − TZ dan tashqari narsalar: GP2/GP3 qo'shimcha relelari, LO/AV/RP olib tashlandi, QR va AVARIYA signallari TZ 7-bo'limga qaytarildi. FIFO navbat va AO qoldi.
+- Pico da proshivka **v1.15** (2026-09-20, `sinov_pc.py` 32/32 o'tdi): jim portga yozmaslik + WDT. v1.14 (2026-09-17): rele mantiqi teskari (`RELE_YOQ=1`) — Low trigger deb yozilgan edi, lampa NO kontaktda ovozga teskari yonardi. v1.13: stansiyasiz xotiraga yig'ish (`HB`), `kal.json`, alohida ohang `HQ/HA`, avariya ovozsiz rejimi `AV`. `pico/sinov_pc.py` 32 ssenariy o'tdi. v1.12 (arxivda): avariyali to'xtash, yangi QR/avariya signallari, sikl `qadam()` funksiyasida (sinov uchun). v1.11 (arxivda): v1.10 + `B1/B2`. v1.10: uzun detal (L > D) navbat muddati tuzatildi. v1.9 (2026-09-16 yozildi, `PING`/`HOLAT`/`SET` va `signal_test.py` o'tdi). v1.9 = v1.8 − TZ dan tashqari narsalar: GP2/GP3 qo'shimcha relelari, LO/AV/RP olib tashlandi, QR va AVARIYA signallari TZ 7-bo'limga qaytarildi. FIFO navbat va AO qoldi.
 - v1.8 boshqa joyda yozilgan, kompyuterda nusxasi yo'q edi — Pico dan o'qib `archive/main_pico_2026-09-16_v1.8.py` ga saqlangan. v1.3 — `archive/main_2026-09-09_v1.3.py`, v1.2 — `archive/main_pico_2026-09-09_v1.2.py`.
 - `stansiya.html` v1.9 ga mos: sozlamalarda "Avariya signali" (AO), standart D=2555 TD=12, HOLAT dan versiya chipda. `mes.db` dagi KROMKA-01 sozlamasi ham shu qiymatlarda.
 - Pico COM porti o'zgarib turadi (COM3 → COM5 → COM6), MicroPython 1.29.0 (2026-09-17 da 1.28.0 dan yangilandi, `main.py` saqlanib qoldi). Portni VID 2E8A bo'yicha toping: `Get-PnpDevice -PresentOnly | ? InstanceId -match 'VID_2E8A'`.

@@ -1,4 +1,4 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.14)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.15)
 #
 # OYOQCHALAR — TZ 3-bo'lim, boshqa pin ishlatilmaydi:
 #   GP1  (2-pin)   <- datchik 1 optopara 4-oyoq   (kirish)
@@ -152,15 +152,43 @@ YIGILADI   = ('olchov', 'ogoh', 'avariya_toxtash', 'uskuna')
 XOST       = {'oxir': None, 'yoqolgan': 0}
 yigilgan   = []            # (ticks_ms, json matn)
 
+# ---------- QOROVUL (watchdog) ----------
+# Dastur biror joyda qotib qolsa (masalan USB yozuvi blokda tursa), qorovul
+# taymeri Pico ni qayta yuklaydi: USB qaytadan ro'yxatdan o'tadi, Windows
+# porti tiklanadi va stansiya o'zi ulanadi — kabelni sug'urib-ulash shart emas.
+# Qorovul FAQAT stansiya bilan ishlay boshlaganda yoqiladi: Thonny yoki
+# mpremote bilan ishlaganda yoqilmaydi, aks holda fayl yozish paytida REPL
+# to'xtaganda Pico qayta yuklanib, nusxalashni buzardi.
+WDT_MS = 8000
+_wdt = {'w': None}
+
+def wdt_yoq():
+    if _wdt['w'] is None:
+        try:
+            from machine import WDT
+            _wdt['w'] = WDT(timeout=WDT_MS)
+        except (ImportError, AttributeError, ValueError, OSError):
+            _wdt['w'] = False          # bu platformada yo'q — qayta urinmaymiz
+
+def wdt_boq():
+    if _wdt['w']:
+        _wdt['w'].feed()
+
 def xost_bor():
     return XOST['oxir'] is not None and time.ticks_diff(time.ticks_ms(), XOST['oxir']) < XOST_MS
 
 def yubor(d):
-    if d.get('ev') in YIGILADI and not xost_bor():
-        if len(yigilgan) >= XOTIRA_MAX:
-            yigilgan.pop(0)
-            XOST['yoqolgan'] += 1
-        yigilgan.append((time.ticks_ms(), json.dumps(d)))
+    # Stansiya jim bo'lsa USB ga UMUMAN yozmaymiz. Sabab: host portni o'qimay
+    # qo'ysa (kiosk yopilgan, Windows portni uyquga qo'ygan), CDC buferi to'lib
+    # print() butun dasturni qotirib qo'yishi mumkin — Pico o'lchashdan ham
+    # to'xtaydi. Muhim hodisalar xotiraga yig'iladi, qolgani (holat, kal,
+    # tezlik) tashlanadi: stansiya ulanganda HOLAT bilan hammasini qayta oladi.
+    if not xost_bor():
+        if d.get('ev') in YIGILADI:
+            if len(yigilgan) >= XOTIRA_MAX:
+                yigilgan.pop(0)
+                XOST['yoqolgan'] += 1
+            yigilgan.append((time.ticks_ms(), json.dumps(d)))
         return
     print(json.dumps(d))
 
@@ -171,16 +199,21 @@ def xotirani_yubor():
         ms, s = yigilgan.pop(0)
         # JSON oxiridagi "}" oldiga eski_ms qo'shamiz
         print(s[:-1] + ', "eski_ms": %d}' % time.ticks_diff(hozir, ms))
+        wdt_boq()                        # 300 tagacha yozuv — qorovul kutsin
     XOST['yoqolgan'] = 0
 
 def xost_gapirdi():
     yangi = not xost_bor()
     XOST['oxir'] = time.ticks_ms()
+    wdt_yoq()                            # stansiya bilan ishlayapmiz — qorovul yoqiladi
     if yangi and (yigilgan or XOST['yoqolgan']):
         xotirani_yubor()
 
 def chop(s):
-    if CHOP:
+    # Thonny uchun matn. Stansiya bir marta gapirib keyin jim qolgan bo'lsa —
+    # yozmaymiz (yubor() dagi sabab bilan bir xil). Thonny da ishlatilganda
+    # stansiya umuman bo'lmaydi (XOST['oxir'] is None) — matn ko'rinaveradi.
+    if CHOP and (XOST['oxir'] is None or xost_bor()):
         print(s)
 
 # ================= DATCHIKLAR =================
@@ -600,14 +633,14 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.14'})
+                  'ver': '1.15'})
         yubor(d)
 
 # ================= BOSHLANISH =================
 yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.14")
+    print("  KROMKA STANSIYASI KONTROLLERI  v1.15")
     print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  AUDIO=GP%d"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")
@@ -691,8 +724,10 @@ def qadam():
 
     alarm_tick()
     led.value(1 if (kuzat[1]['yopiq'] or kuzat[2]['yopiq']) else 0)
+    wdt_boq()
 
 if __name__ == '__main__':
     while True:
         qadam()
         time.sleep_ms(5)
+
