@@ -339,14 +339,14 @@ def S22():
     tekshir('22 18 m/min rejimida (RUN siz) to\'xtash ham qayd qilinadi', len(toxtashlar()) == 1 and avariya_yoniq(), CHIQ)
 
 def S23():
+    # v1.17: D2 tasdiqlamaguncha D1 yozuvi navbatdan TUSHMAYDI. D2 ko'rmasa —
+    # soxta o'lchov emas, ogohlantirish chiqadi (datchik javob bermayapti).
     l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
     l.d2_kor = False
-    # v1.16 dan boshlab D2 ni kutish muddati uzaytirildi (KUT_KARRA=5, ~78 s):
-    # tiqilib qolgan detal navbatdan tushib qolmasligi uchun. Shuning uchun
-    # sinov ham uzoqroq yuradi.
     l.qoy(500); l.yur(130000)
-    o = olchovlar()
-    tekshir('23 D2 ko\'rmasa FAQAT1 hali ham ishlaydi', len(o) == 1 and o[0]['kod'] == 'FAQAT1' and not toxtashlar(), CHIQ)
+    og = [e for e in ogohlar() if e['sabab'] == 'javob_yoq']
+    tekshir('23 D2 ko\'rmasa: yozuv navbatda qoladi, javob_yoq ogohi chiqadi',
+            not olchovlar() and len(og) == 1 and len(M.kutuv) == 1 and not toxtashlar(), CHIQ)
 
 def S24():
     l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
@@ -540,17 +540,56 @@ def S34():
 
 def S35():
     # Birinchi detal yo'ldan olib qo'yildi. Ikkinchisi O'ZINING yozuvi bilan
-    # juftlanishi kerak (eski mantiqda birinchisining yozuvi bilan qo'shilib ketardi).
+    # juftlanishi kerak. Yo'qolgani jimgina tashlanmaydi: "d2_tasdiqlamadi"
+    # hodisasi chiqadi (v1.17 — soxta uzunlik o'rniga rost xabar).
     l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
     l.qoy(400); yetib_bor(l, 600)
     l.qoy(1200); yetib_bor(l, 1400)
     l.detal.pop(0)                          # birinchisi olib qo'yildi
     l.yur(40000)
-    o = olchovlar()
-    kod = [e['kod'] for e in o]
+    o = olchovlar(); tq = [e for e in CHIQ if e['ev'] == 'tiqilish']
     tekshir('35 yo\'qolgan detal keyingisining o\'lchoviga qo\'shilib ketmaydi',
-            len(o) == 2 and kod[0] == 'FAQAT1' and abs(o[0]['L'] - 400) < 15
-            and kod[1] == 'OK' and abs(o[1]['L'] - 1200) < 20, CHIQ)
+            len(tq) == 1 and tq[0]['sabab'] == 'd2_tasdiqlamadi' and abs(tq[0]['L1'][0] - 400) < 15
+            and len(o) == 1 and o[0]['kod'] == 'OK' and abs(o[0]['L'] - 1200) < 20, CHIQ)
+
+def S36():
+    # D2 butunlay ko'rmasa, navbat KUTUV_MAX gacha to'ladi va shundan keyingina
+    # eng eskisi FAQAT1 bo'lib chiqadi — ya'ni ma'lumot yo'qolmaydi, kechikadi.
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    l.d2_kor = False
+    for _ in range(M.KUTUV_MAX + 2):
+        l.qoy(500); l.yur(4000)
+    l.yur(20000)
+    o = olchovlar()
+    tekshir('36 D2 o\'lgan bo\'lsa navbat to\'lgach FAQAT1 chiqa boshlaydi',
+            len(o) >= 1 and all(e['kod'] == 'FAQAT1' for e in o) and len(M.kutuv) <= M.KUTUV_MAX,
+            [len(o), [e['kod'] for e in o], len(M.kutuv)])
+
+def S37():
+    # 2026-09-21 talabi: D1 dan o'tgan detalni D2 TASDIQLAMASDAN turib, 2-6 s
+    # ichida D1 ga yangi detal kiradi. Har bir yozuv o'z detali bilan
+    # juftlanishi, ustiga yangisi tushmasligi va navbatdan uchib ketmasligi kerak.
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    uzunlik = [400, 1200, 650, 300]
+    for L in uzunlik:
+        l.qoy(L)
+        yetib_bor_oxirgi(l, L + 120)        # D1 dan butunlay o'tsin
+        l.yur(3000)                          # keyingisi 3 s dan keyin kiradi
+    l.yur(60000)
+    o = olchovlar()
+    olchangan = [round(e['L']) for e in o]
+    tekshir('37 ketma-ket 4 detal: har biri O\'Z o\'lchovi bilan, tartibda chiqadi',
+            len(o) == 4 and all(e['kod'] == 'OK' for e in o)
+            and all(abs(olchangan[i] - uzunlik[i]) < 15 for i in range(4)),
+            [olchangan, [e['kod'] for e in o]])
+
+def yetib_bor_oxirgi(l, x, ms_max=120000):
+    """Oxirgi qo'yilgan detal old qirrasi x ga yetguncha yurgizish."""
+    for _ in range(ms_max // 5):
+        if l.detal and l.detal[-1][0] >= x:
+            return
+        l.yur(5)
+    raise RuntimeError('yetib bormadi')
 
 if __name__ == '__main__':
     N = int(sys.argv[1]) if len(sys.argv) > 1 else 0

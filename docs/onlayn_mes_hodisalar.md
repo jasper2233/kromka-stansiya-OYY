@@ -32,7 +32,7 @@ yuboradi.
 
 | Maydon | Ma'nosi |
 |---|---|
-| `sabab` | `birga_otdi` — bir necha detal bir-biriga tiqilib, ikkinchi datchikdan **birga** o'tgan. `vaqt_mos_emas` — D1 va D2 vaqtlari bitta detalga to'g'ri kelmadi (detal datchik ostida to'xtab qolgan) |
+| `sabab` | `birga_otdi` — bir necha detal bir-biriga tiqilib, ikkinchi datchikdan **birga** o'tgan. `d2_tasdiqlamadi` — detal(lar) ikkinchi datchikkacha yetib bormagan (yo'ldan olingan, tushib qolgan): keyingi detal aniq mos kelgani uchun navbat tekislandi. `vaqt_mos_emas` — D1 va D2 vaqtlari bitta detalga to'g'ri kelmadi (detal datchik ostida to'xtab qolgan) |
 | `n` | O'lchanmay qolgan detallar soni |
 | `L2` | Ikkinchi datchik ko'rgan umumiy uzunlik, mm |
 | `L1` | Birinchi datchik bo'yicha shu detallarning uzunliklari, mm |

@@ -1,4 +1,4 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.16)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.17)
 #
 # OYOQCHALAR — TZ 3-bo'lim, boshqa pin ishlatilmaydi:
 #   GP1  (2-pin)   <- datchik 1 optopara 4-oyoq   (kirish)
@@ -462,11 +462,18 @@ def _yaqin(a, b):
 def juftni_tanla(d2_mm):
     """Navbatdan shu D2 o'lchoviga mos yozuvni tanlaydi.
 
+    QAT'IY TARTIB (2026-09-21 talabi): navbat boshi HECH QACHON o'tkazib
+    yuborilmaydi. D2 har doim eng eski yozuvni oladi — D1 dan kelgan ma'lumot
+    D2 tasdiqlamaguncha navbatda turadi, ustiga yangisi tushmaydi va
+    keyingisiga almashtirilmaydi. Yagona istisno: bir necha detal bir-biriga
+    tiqilib, D2 dan BIRGA o'tgan bo'lsa — u holda o'sha yozuvlar birga
+    yopiladi (aks holda navbat abadiy bir qadam siljib qolardi), lekin ular
+    jimgina tashlanmaydi: `tiqilish` hodisasi bilan MES ga xabar beriladi.
+
     Qaytaradi (turi, yozuvlar):
       'juft'     [r]            — bitta detal, normal juftlik
       'tiqilish' [r1, r2, ...]  — detallar BIRGA o'tgan (bir-biriga tiqilib)
-      'yoqolgan' [r1, .., rn]   — oldingilari yo'qolgan, oxirgisi mos keldi
-      'mos_yoq'  []             — navbatda mos yozuv yo'q
+      'mos_yoq'  []             — navbat bo'sh (D1 bu detalni ko'rmagan)
     """
     if not kutuv:
         return ('mos_yoq', [])
@@ -477,10 +484,17 @@ def juftni_tanla(d2_mm):
         yigindi += _mm(kutuv[i]['dur'], kutuv[i]['S'])
         if _yaqin(yigindi, d2_mm):
             return ('tiqilish', kutuv[:i + 1])
+    # Oxirgi chora: navbat boshi mos kelmadi, lekin KEYINGI yozuvlardan biri
+    # aniq mos keldi. Demak boshidagi detal(lar) D2 gacha yetib bormagan —
+    # yo'ldan olib qo'yilgan yoki chiqib ketgan. Ularni jimgina tashlamaymiz:
+    # har biri uchun `tiqilish` (d2_tasdiqlamadi) hodisasi chiqadi, navbat esa
+    # qayta tekislanadi — aks holda undan keyingi HAR BIR detal xato juftlanardi.
     for i in range(1, min(len(kutuv), TIQ_MAX + 1)):
         if _yaqin(_mm(kutuv[i]['dur'], kutuv[i]['S']), d2_mm):
-            return ('yoqolgan', kutuv[:i + 1])
-    return ('mos_yoq', [])
+            return ('otkazildi', kutuv[:i + 1])
+    # Hech qaysisi mos kelmadi — o'lchov ishonchsiz (detal datchik ostida
+    # to'xtab qolgan). Yozuv SHU navbat boshidan olinadi: tartib buzilmaydi.
+    return ('mos_emas', kutuv[:1])
 
 def tiqilish_qayd(sabab, rlar, d2_mm):
     """O'lchab bo'lmaydigan holat: detallar birga o'tgan yoki datchik ostida
@@ -532,49 +546,38 @@ def d2_tugadi(us, dur, bekor=False, juft_d1=False):
     if turi == 'tiqilish':
         tiqilish_qayd('birga_otdi', rlar, d2_mm)
         return
-    if turi == 'yoqolgan':
-        for r in rlar[:-1]:              # yo'qolganlar: D1 ko'rgan, D2 ko'rmagan
-            yakunla(r, None, None)
+    if turi == 'otkazildi':              # oldingilari D2 gacha yetmagan, oxirgisi mos
+        tiqilish_qayd('d2_tasdiqlamadi', rlar[:-1], d2_mm)
         yakunla(rlar[-1], dur, us)
         return
-    # mos_yoq: navbat bo'sh bo'lsa — D1 bu detalni ko'rmagan (FAQAT2).
-    # Navbat bo'sh bo'lmasa — vaqtlar mos kelmadi: o'lchov ishonchsiz.
-    if kutuv:
-        r = kutuv.pop(0)
-        if not r['bekor']:
-            tiqilish_qayd('vaqt_mos_emas', [r], d2_mm)
+    if turi == 'mos_emas':               # navbat boshi olindi, lekin vaqtlar mos emas
+        tiqilish_qayd('vaqt_mos_emas', rlar, d2_mm)
         return
-    yakunla(None, dur, us)
+    yakunla(None, dur, us)               # mos_yoq: navbat bo'sh — D1 ko'rmagan (FAQAT2)
 
 def kutuvni_tekshir(hozir_ms):
-    """Navbatni kuzatadi. VAQT BO'YICHA HECH NARSA TASHLANMAYDI.
+    """Navbatni kuzatadi. VAQT BO'YICHA HECH NARSA TASHLANMAYDI (2026-09-21).
 
-    Ilgari navbat boshi `d2_kutish_ms` (10 m/min da ~23 s) dan uzoq kutsa,
-    yozuv tashlanib FAQAT1 chiqardi. Tiqilishda detal D1 dan o'tib D2 ga
-    yetmay turib qolardi — muddat tugab yozuv tashlanar, keyin kelgan har bir
-    D2 o'lchovi BOSHQA detalning D1 yozuvi bilan juftlanardi. Natijada faqat
-    oxirgi detal to'g'ri o'lchanib, qolganlari xato chiqardi (2026-09-20).
+    Tarix: v1.15 gacha navbat boshi `d2_kutish_ms` (10 m/min da ~23 s) dan
+    uzoq kutsa yozuv TASHLANARDI. Tiqilishda shu tashlash navbatni bir qadam
+    siljitib, keyingi har bir D2 o'lchovini boshqa detalning D1 yozuvi bilan
+    juftlardi. v1.16 da muddat uzaytirilgan edi, endi esa butunlay olib
+    tashlandi: D1 dan kelgan yozuv D2 tasdiqlamaguncha navbatda TURADI.
 
-    Endi muddat KUT_KARRA marta uzunroq (10 m/min da ~78 s) va faqat quyidagi
-    shartlarda sanaladi: stanok ishlayapti VA hech bir datchik ostida detal
-    turmagan. Tiqilish odatda shu ikki belgidan biri bilan ko'rinadi.
-    Muddat tugasa yozuv FAQAT1 bo'lib chiqadi (D2 datchigi o'lgan bo'lishi
-    mumkin — `yakunla` ichidagi hisoblagich 3 tadan keyin ogoh beradi), lekin
-    endi kech kelgan detal keyingi yozuv bilan juftlanmaydi: uzunlik
-    tekshiruvi uni ushlaydi.
+    Uzoq kutish faqat OGOHLANTIRISH sababi: D2 datchigi javob bermayotgan
+    bo'lishi mumkin. Navbat esa `KUTUV_MAX` oshgandagina qisqaradi
+    (`d1_tugadi` ichida) — ya'ni oraliqqa sig'maydigan darajada to'planganda.
     """
     if not ishlayapti() or not kutuv:
         return                           # lenta turibdi — kutish hisoblanmaydi
     if kuzat[1]['yopiq'] or kuzat[2]['yopiq']:
         return                           # datchik ostida detal turibdi — tiqilish
-    while kutuv:
-        r = kutuv[0]
-        if time.ticks_diff(hozir_ms, r['ms']) > d2_kutish_ms(r['S']) * KUT_KARRA:
-            kutuv.pop(0)
-            if not r['bekor']:
-                yakunla(r, None, None)
-        else:
-            break                        # navbat vaqt bo'yicha tartiblangan
+    r = kutuv[0]
+    if r.get('ogoh'):
+        return                           # bu yozuv uchun allaqachon ogohlantirdik
+    if time.ticks_diff(hozir_ms, r['ms']) > d2_kutish_ms(r['S']) * KUT_KARRA:
+        r['ogoh'] = True
+        ogoh(2, 'javob_yoq', len(kutuv))
 
 # ================= DETALNI YAKUNLASH =================
 def yakunla(r1, d2, us2):
@@ -758,14 +761,14 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.16'})
+                  'ver': '1.17'})
         yubor(d)
 
 # ================= BOSHLANISH =================
 yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.16")
+    print("  KROMKA STANSIYASI KONTROLLERI  v1.17")
     print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  AUDIO=GP%d"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")

@@ -373,9 +373,9 @@ function onToxtash(m){const t=toxtashMatn(m);$('mVal').textContent='—';
 // Soxta o'lcham chiqarmaymiz — operatorga tiqilishni ko'rsatamiz.
 function tiqilishMatn(m){
   const l1=(m.L1||[]).map(x=>Math.round(x)).join(' + ');
-  return m.sabab==='birga_otdi'
-    ? m.n+' ta detal birga o\'tdi (D2 '+Math.round(m.L2)+' mm, D1 bo\'yicha '+l1+')'
-    : 'D1 va D2 vaqtlari mos kelmadi (D1 '+l1+' mm, D2 '+Math.round(m.L2)+' mm) — detal tiqilib qolgan';
+  if(m.sabab==='birga_otdi')return m.n+' ta detal birga o\'tdi (D2 '+Math.round(m.L2)+' mm, D1 bo\'yicha '+l1+')';
+  if(m.sabab==='d2_tasdiqlamadi')return m.n+' ta detal D2 gacha yetib bormadi (D1 bo\'yicha '+l1+' mm) — yo\'ldan olingan yoki tushib qolgan, o\'lchanmadi';
+  return 'D1 va D2 vaqtlari mos kelmadi (D1 '+l1+' mm, D2 '+Math.round(m.L2)+' mm) — detal tiqilib qolgan';
 }
 function onTiqilish(m){const t=tiqilishMatn(m);$('mVal').textContent='—';
   alarmUI(true,'TIQILISH',t+' — o\'lchov bekor');verdict('bad','Tiqilish',t);
