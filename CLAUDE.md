@@ -42,6 +42,7 @@ Foydalanuvchi — muhandis, elektronika bilan tanish lekin dasturchi emas. Tushu
 | `server/stansiya.html` | Operator ekrani. Serverdan beriladi (WebSerial uchun https/localhost shart) |
 | `server/tablo.html` | MES ko'rinishi: o'lchovlar, ogohlar, detallar, QR kodlar |
 | `docs/` | TZ, yig'ish sxemasi, montaj yo'riqnomalari — HTML, bosib chiqariladi |
+| `docs/onlayn_mes_hodisalar.md` | Onlayn MES (mes.mebelix.uz) dasturchisi uchun: `tiqilish` va boshqa hodisalar, skan↔o'lchov juftlash qoidasi |
 | `archive/` | Eski versiyalar, ishlatilmaydi |
 
 ## Apparat — haqiqiy montaj (TZ v1.2, 3-bo'lim)
@@ -119,6 +120,7 @@ GP0 dagi bitta rele. Lampa va tovush **doim birga** — `signal(yon)` bitta chaq
 
 ## MES API (sinov serveri beradi, haqiqiy MES ham shu shaklda bo'lishi kerak)
 
+- Har `olchov` da `kirish_ts` ham yuboriladi (v1.16 stansiyasi): detal D1 ga **kirgan** lahza = `ts − (ish_ms + d2/1000)`. O'lchov D2 dan chiqqanda tayyor bo'ladi — bu detal kirganidan ~15 s (10 m/min) keyin, operator esa 4–10 s da bir skanerlaydi. Shuning uchun **skan bilan o'lchovni `ts` bo'yicha juftlab bo'lmaydi** — `kirish_ts` kerak. Onlayn MES uchun to'liq qoida: `docs/onlayn_mes_hodisalar.md`.
 - `GET /api/part?qr=A-1001` → `{code,name,L,W,need}` yoki 404
 - `GET /api/olchovlar?tur=skaner|skanersiz&n=200` — skaner bilan / skanersiz o'tgan detallar (`verdict` SKANERSIZ bo'yicha)
 - `GET /api/jurnal?soat=24&station=X` → `[{holat: ishladi|to'xtadi|o'chiq, dan, gacha}]` — `uskuna` va `pico` hodisalaridan. **Stanok o'chiq** = Pico uzildi (stansiya `pico:0` yuboradi, 10 s da topilmasa ham) YOKI stansiya `JIM_S`=180 s dan ko'p `/api/settings` so'ramadi (kompyuter/Chrome o'chiq) — server `stansiya` jadvalida oxirgi ko'rinishni saqlaydi va qaytganda o'sha oraliqqa `pico:0` (`manba:server`) yozadi. `/api/stats` da `stanok: ishlayapti|to'xtagan|o'chiq`.

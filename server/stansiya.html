@@ -323,7 +323,8 @@ function eskiHodisa(m){
   const ts=new Date(Date.now()-m.eski_ms);
   if(m.ev==='olchov'){
     const rec={type:'olchov',qr:null,name:null,expected_mm:null,measured_mm:m.L,delta_mm:null,side:null,verdict:'SKANERSIZ',
-      pico_kod:m.kod,suspect:m.shubha,L1:m.L1,L2:m.L2,d1_us:m.d1,d2_us:m.d2,v_meas:m.v_olch,v_nom:m.v_nom,ish_ms:m.ish_ms,n:m.n,xotiradan:1};
+      pico_kod:m.kod,suspect:m.shubha,L1:m.L1,L2:m.L2,d1_us:m.d1,d2_us:m.d2,v_meas:m.v_olch,v_nom:m.v_nom,ish_ms:m.ish_ms,n:m.n,
+      kirish_ts:kirishVaqti(m,ts),xotiradan:1};
     queue(rec,ts);log.unshift({...rec,ts,cls:'warn'});renderLog();
   }else if(m.ev==='uskuna')queue({type:'uskuna',holat:m.holat,xotiradan:1},ts);
   else if(m.ev==='ogoh')queue({type:'ogoh',ch:m.ch,sabab:m.sabab,q:m.q,xotiradan:1},ts);
@@ -331,6 +332,15 @@ function eskiHodisa(m){
     log.unshift({type:'avariya_toxtash',ts,cls:'bad',matn:toxtashMatn(m)+' (xotiradan)'});renderLog();}
   else if(m.ev==='tiqilish'){queue({type:'tiqilish',sabab:m.sabab,n:m.n,L1:m.L1,L2:m.L2,xotiradan:1},ts);
     log.unshift({type:'tiqilish',ts,cls:'bad',matn:tiqilishMatn(m)+' (xotiradan)'});renderLog();}
+}
+/* Detal D1 ga KIRGAN lahza. O'lchov D2 dan chiqqanda tayyor bo'ladi, ya'ni
+   detal kirganidan ~D/v (10 m/min da ~15 s) keyin. QR skaner esa detal
+   kirishidan oldin o'qiladi. MES skan bilan o'lchovni to'g'ri juftlashi uchun
+   shu vaqtni ham yuboramiz: kirish = hozir − (D1→D2 vaqti + D2 da to'silgan vaqt).
+   `taym` — hodisa qabul qilingan lahza (xotiradan kelgan yozuvlar uchun asl vaqti). */
+function kirishVaqti(m,taym){
+  const t=(taym?taym.getTime():Date.now())-((m.ish_ms||0)+(m.d2||0)/1000);
+  return new Date(t).toISOString();
 }
 function onOlchov(m){
   let verd='SKANERSIZ',side=null,delta=null,cls='warn',exp=null;
@@ -347,7 +357,8 @@ function onOlchov(m){
   renderSides();
   if(part&&done[0]>=part.need[0]&&done[1]>=part.need[1])verdict('ok','DETAL TAYYOR','keyingi QR kodni skanerlang');
   const rec={type:'olchov',qr:part?.code||null,name:part?.name||null,expected_mm:exp,measured_mm:m.L,delta_mm:delta,side,verdict:verd,
-    pico_kod:m.kod,suspect:m.shubha,L1:m.L1,L2:m.L2,d1_us:m.d1,d2_us:m.d2,v_meas:m.v_olch,v_nom:m.v_nom,ish_ms:m.ish_ms,n:m.n};
+    pico_kod:m.kod,suspect:m.shubha,L1:m.L1,L2:m.L2,d1_us:m.d1,d2_us:m.d2,v_meas:m.v_olch,v_nom:m.v_nom,ish_ms:m.ish_ms,n:m.n,
+    kirish_ts:kirishVaqti(m)};
   log.unshift({...rec,ts:new Date(),cls});queue(rec);renderLog();renderStat();
 }
 // Stanok yo'lda detal bor paytda to'xtadi — o'lchov bekor, avariya (Pico o'zi boshlaydi)
