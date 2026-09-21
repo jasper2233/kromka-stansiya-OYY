@@ -148,6 +148,8 @@ Qilingan ishlar:
 - `kiosk_ishga_tushirish.bat`: Chrome fon bayroqlari (occluded windows, IntensiveWakeUpThrottling, memory saver o'chirildi) — yorliq muzlatilmasin.
 - Proshivka **v1.15**: stansiya jim bo'lsa USB ga **umuman yozilmaydi** (`yubor` va `chop` ikkalasi ham) — o'qilmayotgan portga yozish CDC buferini to'ldirib, `print()` da butun dasturni qotirishi mumkin edi. **Qorovul (WDT 8 s)** qo'shildi: birinchi marta stansiya gapirgandan keyin yoqiladi (Thonny/mpremote da yoqilmaydi), qotib qolsa Pico qayta yuklanadi va USB qayta ro'yxatdan o'tadi.
 
+**Pico da v1.16 yozilgan (2026-09-20 19:47, COM6).** Kalibrlash `kal.json` da saqlanib qoldi: `D=2553.37 B1=-2.19 B2=-5.73 C=0.885 V10=10.151 V18=18.227`. 2026-09-21 ertalab jonli ishladi: o'lchovlar stansiyaga to'g'ridan-to'g'ri kelyapti, tungi 41 ta yozuv Pico xotirasidan olindi (`xotiradan:1`), avariya/tiqilish yo'q.
+
 - Apparat yig'ilgan, Pico o'lchayapti, datchiklar ishlaydi, rele ishlaydi.
 - **Usilitel ishlaydi** — tovush bor, avariya va QR signallari eshitiladi.
 - Sinov MES + stansiya + tablo ishlagan. QR skaner sinalgan.
