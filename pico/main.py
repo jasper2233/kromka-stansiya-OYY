@@ -1,4 +1,4 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.17)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.18)
 #
 # OYOQCHALAR — TZ 3-bo'lim, boshqa pin ishlatilmaydi:
 #   GP1  (2-pin)   <- datchik 1 optopara 4-oyoq   (kirish)
@@ -523,6 +523,24 @@ def d2_tugadi(us, dur, bekor=False, juft_d1=False):
         chop("  > D2: detal bekor (avariyali to'xtash)")
         return
 
+    # FIZIK TEKSHIRUV: detal D1 dan D2 gacha lentadan TEZ yura olmaydi.
+    # dt juda qisqa bo'lsa — navbat boshidagi yozuv shu detalniki EMAS. Shunday
+    # bo'ladi: Pico qayta yuklanganda (yoki tok uzilganda) yo'lda qolgan
+    # detallar D1 yozuvisiz D2 ga yetib keladi va navbat bir qadam siljiydi.
+    # Detallar bir xil uzunlikda bo'lsa, uzunlik tekshiruvi buni sezmaydi —
+    # faqat imkonsiz tezlik ko'rsatib beradi. Yozuvni ISHLATMAYMIZ: navbatda
+    # qoldiramiz, o'lchovni faqat D2 bo'yicha chiqaramiz. Navbat o'zi tekislanadi.
+    if kutuv and not juft_d1 and us is not None and kutuv[0]['us'] is not None:
+        dt_tek = time.ticks_diff(us, kutuv[0]['us'])
+        v_nom = (KAL['V18'] if kutuv[0]['S'] == 18 else KAL['V10']) / 60000.0
+        if v_nom > 0 and KAL['D'] > 0:
+            eng_qisqa = KAL['D'] / (v_nom * (1.0 + TOL_TEZLIK / 100.0))
+            if 0 < dt_tek < eng_qisqa:
+                chop("  > D2: navbat boshidagi yozuv bu detalniki emas (dt %.1f s juda qisqa)"
+                     % (dt_tek / 1000000.0))
+                yakunla(None, dur, us)
+                return
+
     d2_mm = _mm(dur, tezlik_nom())
     if juft_d1:
         turi, rlar = ('mos_yoq', [])
@@ -761,14 +779,14 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.17'})
+                  'ver': '1.18'})
         yubor(d)
 
 # ================= BOSHLANISH =================
 yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.17")
+    print("  KROMKA STANSIYASI KONTROLLERI  v1.18")
     print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  AUDIO=GP%d"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")

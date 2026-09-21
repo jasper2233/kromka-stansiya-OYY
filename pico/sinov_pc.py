@@ -583,6 +583,26 @@ def S37():
             and all(abs(olchangan[i] - uzunlik[i]) < 15 for i in range(4)),
             [olchangan, [e['kod'] for e in o]])
 
+def S38():
+    # Pico qayta yuklandi (yoki tok uzildi) — yo'lda qolgan detallar D1 yozuvisiz
+    # D2 ga keladi. Navbat siljib qolmasligi kerak: yo'ldagi detal FAQAT2 bo'ladi,
+    # keyingilari esa O'Z yozuvi bilan, to'g'ri tezlikda o'lchanadi.
+    # (Detallar bir xil uzunlikda — uzunlik tekshiruvi bilan ajratib bo'lmaydi,
+    #  faqat imkonsiz qisqa dt ko'rsatib beradi.)
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    l.detal.append([1500.0, 447.0])         # D1 dan o'tib bo'lgan, yozuvi yo'q
+    l.yur(2000)
+    for _ in range(2):                       # keyin oddiy detallar keladi
+        l.qoy(447); yetib_bor_oxirgi(l, 600); l.yur(2000)
+    l.yur(60000)
+    o = olchovlar()
+    kod = [e['kod'] for e in o]
+    tez = [e for e in ogohlar() if e['sabab'] == 'tezlik_nomuvofiq']
+    tekshir('38 qayta yuklashdan keyin yo\'ldagi detal navbatni siljitmaydi',
+            len(o) == 3 and kod[0] == 'FAQAT2' and kod[1] == 'OK' and kod[2] == 'OK'
+            and not tez and all(abs(e['L'] - 447) < 15 for e in o),
+            [kod, [round(e['L'], 1) for e in o], len(tez)])
+
 def yetib_bor_oxirgi(l, x, ms_max=120000):
     """Oxirgi qo'yilgan detal old qirrasi x ga yetguncha yurgizish."""
     for _ in range(ms_max // 5):
