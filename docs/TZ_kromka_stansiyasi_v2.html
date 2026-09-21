@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texnik topshiriq v2.0 — Kromka stansiyasi</title>
+<style>
+:root{--ink:#1C1917;--mut:#57534E;--dim:#8A857F;--rule:#D6D3D1;--acc:#0F6E56;--warn:#B45309;--dan:#B91C1C;--tint:#F5F4F1;
+  --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.65}
+.doc{max-width:860px;margin:0 auto;padding:40px 36px 80px}
+.head{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:30px}
+.head .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+.head h1{font-size:24px;font-weight:600;margin:6px 0 4px}
+.head p{margin:0;color:var(--mut);font-size:14px}
+.meta{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+h2{font-size:16.5px;font-weight:600;margin:40px 0 12px;padding-top:14px;border-top:1px solid var(--rule);display:flex;align-items:baseline;gap:12px}
+h2 span{font-family:var(--mono);font-size:12.5px;color:var(--acc);flex:none}
+h3{font-size:14.5px;font-weight:600;margin:22px 0 8px}
+p{margin:0 0 11px} ul,ol{margin:0 0 12px;padding-left:22px} li{margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th{text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+td{padding:7px 10px 7px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td.m,th.m{font-family:var(--mono);font-size:12px;white-space:nowrap}
+code{font-family:var(--mono);font-size:12.5px;background:var(--tint);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.5;margin:10px 0 14px}
+.box{border:1px solid var(--rule);border-radius:8px;padding:13px 15px;margin:16px 0;background:var(--tint);font-size:13.5px}
+.box.dan{border-color:var(--dan);background:#FEF2F2}.box.warn{border-color:var(--warn);background:#FFFBEB}
+.box b{display:block;margin-bottom:4px}.box.dan b{color:var(--dan)}.box.warn b{color:var(--warn)}
+.chg{font-family:var(--mono);font-size:11px;color:#fff;background:var(--acc);padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:middle}
+@media print{.doc{max-width:none;padding:0}h2{page-break-after:avoid}table,.box,pre{page-break-inside:avoid}.pb{page-break-before:always}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<div class="head">
+  <div class="k">Texnik topshiriq</div>
+  <h1>Kromka stansiyasi — o'lchov va MES ga uzatish</h1>
+  <p>Detal uzunligini ikki fotoelektrik datchik bilan o'lchash, tiqilish va nosozliklarni aniqlash, natijani MES ga uzatish, ovoz va yorug'lik bilan ogohlantirish</p>
+  <div class="meta"><span>Versiya 2.0</span><span>21 sentyabr 2026</span><span>Proshivka v1.18</span><span>Kontroller: Raspberry Pi Pico</span></div>
+</div>
+
+<p>Bu hujjat v1.2 (6 sentyabr) TZ sining o'rnini bosadi. v1.2 da apparat ulanishi to'g'ri yozilgan, lekin o'lchash mantiqi, signallar va MES bilan aloqa shundan keyin sezilarli o'zgardi. Eski hujjat <code>docs/TZ_kromka_kontroller.html</code> da tarix sifatida qoladi.</p>
+
+<h2><span>1</span> Maqsad va qamrov</h2>
+<p>Kontroller kromka yopishtirish stanogidan o'tayotgan har bir detalning uzunligini ikkita mustaqil to'siq datchigi bilan o'lchaydi, stanok holati va tezligini kuzatadi, natijani brauzer orqali MES ga uzatadi va nosozlikda operatorni sirena hamda lampa bilan ogohlantiradi.</p>
+<p><b>Qamrovga kirmaydi:</b> stanokni to'xtatish yoki boshqarish. Tizim faqat o'lchaydi va xabar beradi. E-Stop va blokirovka — stanokning o'z tizimi.</p>
+
+<h3>Ishonchlilik talabi</h3>
+<ul>
+  <li>Kompyuter yoki brauzer o'chib qolsa ham Pico o'lchashda davom etadi va natijalarni o'zida saqlaydi (300 tagacha), aloqa tiklanganda asl vaqti bilan uzatadi.</li>
+  <li>Internet yoki MES o'chib qolsa, stansiya hodisalarni brauzer bazasida (IndexedDB) saqlaydi va tiklanganda asl vaqti bilan yuboradi.</li>
+  <li>Datchiklardan biri ishdan chiqsa ham ikkinchisi bo'yicha o'lchov davom etadi va ogohlantirish beriladi.</li>
+  <li><b>Soxta o'lcham hech qachon chiqarilmaydi.</b> Ishonchsiz holat (tiqilish, detal datchik ostida to'xtashi) alohida hodisa sifatida yuboriladi.</li>
+</ul>
+
+<h2><span>2</span> Tizim tarkibi</h2>
+<pre>[Datchik D1] → PC817 → GP1 ┐
+[Datchik D2] → PC817 → GP5 ├→ [Pico, MicroPython] ←USB→ [Chrome kiosk, stansiya.html] ←HTTPS→ [MES]
+[RUN 24 V]   → PC817 → GP9 │        ↓ GP0 rele → lampa
+[18 m/min]   → PC817 → GP13┘        ↓ GP16 PWM → XH-M564 → dinamik</pre>
+
+<table>
+<tr><th>Qism</th><th>Vazifasi</th></tr>
+<tr><td class="m">Pico (main.py)</td><td>Vaqtni mikrosekundda o'lchaydi, uzunlikni hisoblaydi, detallarni juftlaydi, signal beradi, JSON yuboradi. Mantiq shu yerda.</td></tr>
+<tr><td class="m">stansiya.html</td><td>Brauzerdagi shlyuz: WebSerial orqali Pico bilan, HTTPS orqali MES bilan gaplashadi. QR skaner klaviatura sifatida keladi. Kalibrlash hisobi shu yerda.</td></tr>
+<tr><td class="m">MES</td><td>Detallar ro'yxati, sozlamalar, hodisalar jurnali. Sinov uchun <code>server/mes_server.py</code>; ishlab chiqarishda <code>mes.mebelix.uz</code>.</td></tr>
+</table>
+
+<h2><span>3</span> Apparat va oyoqchalar</h2>
+<div class="box dan"><b>Band pinlar faqat shular</b>Kodda boshqa pin ishlatilmaydi. Yangi rele yoki kirish kerak bo'lsa — avval shu TZ yangilanadi, keyin kod.</div>
+<table>
+<tr><th class="m">GPIO</th><th class="m">Pin</th><th>Vazifasi</th><th>Faol holat</th></tr>
+<tr><td class="m">GP1</td><td class="m">2</td><td>Datchik 1 — kirish (E3Z-T61 NPN, PC817 orqali)</td><td>past = nur to'silgan</td></tr>
+<tr><td class="m">GP5</td><td class="m">7</td><td>Datchik 2 — chiqish</td><td>past = nur to'silgan</td></tr>
+<tr><td class="m">GP9</td><td class="m">12</td><td>RUN — stanok ishlayapti (10 m/min)</td><td>past = ishlayapti</td></tr>
+<tr><td class="m">GP13</td><td class="m">17</td><td>18 m/min rejimi (HMI → chastotnik liniyasi)</td><td>past = 18 m/min</td></tr>
+<tr><td class="m">GP0</td><td class="m">1</td><td>Rele moduli IN — lampa (NO kontakt). Yagona rele</td><td><b>yuqori = tortadi</b> (<code>RELE_YOQ=1</code>)</td></tr>
+<tr><td class="m">GP16</td><td class="m">21</td><td>PWM → R2 10k → A → R3 3.3k → GND; A → C1 10µF → usilitel NL</td><td>2500 / 1500 Hz</td></tr>
+</table>
+
+<h3>Quvvat va ajratish</h3>
+<ul>
+  <li>Blok pitaniya AL-2402 24 V 2 A: datchiklar va usilitel. Uning 0 V i Pico GND bilan umumiy.</li>
+  <li>Rele moduli VBUS (5 V) dan. Kondensatorlar: C1 10µF audio, C2 100µF VBUS, C3 100µF/50V 24 V liniyada.</li>
+  <li>Har optopara: <code>+24V → 4.7kΩ → 1-oyoq</code>, <code>2-oyoq → datchik qora sim</code>, <code>4 → GP</code>, <code>3 → Pico GND</code>.</li>
+</ul>
+<div class="box dan"><b>Yagona ajratish chegarasi — stanok zanjiri</b>Tezlik va RUN optoparalarining 2-oyoqlari stanokning o'z 0 V iga ulanadi. Stanok 0 V i Pico GND ga yoki AL-2402 ga <b>hech qachon</b> ulanmaydi. Tekshiruv: multimetrda stanok 0V ↔ Pico GND — cheksiz.</div>
+
+<h2><span>4</span> O'lchash mantiqi</h2>
+
+<h3>4.1 Asos</h3>
+<p>Har datchik mustaqil ishlaydi: nur to'silgan vaqt <code>t</code> (µs) o'lchanadi. Tezlik har detal uchun datchiklar orasidagi o'tish vaqtidan hisoblanadi; nominal 10/18 — metama'lumot va zaxira.</p>
+<pre>dt_mid = dt + (t2 − t1)/2        detal MARKAZI D1 dan D2 gacha yurgan vaqt
+v      = D_eff / (dt_mid − C)
+L1     = v·(t1 − K1) − B1        har datchikning o'z tuzatmasi
+L2     = v·(t2 − K2) − B2
+</pre>
+<p><code>B</code> — uzunlik siljishi (nur kengligi, mm), <code>K</code> — vaqt kechikishi (ms), <code>C</code> — o'tish vaqti tuzatmasi (ms), <code>D_eff</code> — datchiklar orasidagi samarali masofa (≈2553 mm).</p>
+
+<h3>4.2 Qaror</h3>
+<table>
+<tr><th>Holat</th><th>Natija</th><th class="m">kod</th></tr>
+<tr><td>Ikkala datchik ko'rdi, <code>|L1−L2| ≤ TD</code></td><td>O'rtacha</td><td class="m">OK</td></tr>
+<tr><td>Ikkalasi ko'rdi, farq > TD</td><td>Kichigi (iflos linza uzaytiradi), uzunroq bergani shubhali</td><td class="m">FARQ</td></tr>
+<tr><td>Faqat D1 ko'rdi</td><td>L1</td><td class="m">FAQAT1</td></tr>
+<tr><td>Faqat D2 ko'rdi</td><td>L2</td><td class="m">FAQAT2</td></tr>
+</table>
+
+<h3>4.3 Navbat — D1 va D2 ni juftlash <span class="chg">v1.17/v1.18</span></h3>
+<p>Datchiklar orasi ≈2553 mm, ya'ni yo'lda bir vaqtda 4–6 ta detal bo'lishi mumkin. D1 tugatgan har detal <b>navbatga (FIFO)</b> yoziladi, D2 tugatganda eng eskisi bilan juftlanadi. Lenta transporter — detallar bir-birini quvib o'tmaydi, shuning uchun tartib bir xil.</p>
+<div class="box dan"><b>Asosiy qoida</b>D1 dan kelgan yozuv D2 tasdiqlamaguncha navbatdan yo'qolmaydi, ustiga yangi o'lchov tushmaydi va navbat boshi sababsiz o'tkazib yuborilmaydi. <b>Vaqt bo'yicha hech narsa tashlanmaydi.</b> Navbat faqat D2 tasdiqlaganda yoki 12 tadan oshganda qisqaradi.</div>
+<p>D2 detalni o'tkazganda quyidagi tekshiruvlar ketma-ket bajariladi:</p>
+<ol>
+  <li><b>Fizik tezlik tekshiruvi.</b> Detal D1 dan D2 gacha lentadan tez yura olmaydi. Agar <code>dt &lt; D/(v_nom·1.2)</code> bo'lsa — navbat boshidagi yozuv bu detalniki emas (masalan Pico qayta yuklangandan keyin yo'lda qolgan detallar D1 yozuvisiz keladi). Yozuv <b>navbatda qoladi</b>, o'lchov faqat D2 bo'yicha chiqadi (FAQAT2), navbat o'zi tekislanadi.</li>
+  <li><b>Uzunlik bo'yicha solishtirish.</b> Bitta detalning D1 va D2 dagi vaqti deyarli bir xil bo'ladi. Chegara: 25% yoki kamida 30 mm (kichik uzunlikdan). Navbat boshi mos kelsa — normal juftlik.</li>
+  <li><b>Birga o'tish.</b> Navbatdagi bir necha yozuvning yig'indisi mos kelsa — detallar bir-biriga tiqilib, D2 dan birga o'tgan: <code>tiqilish / birga_otdi</code>, o'lchov chiqarilmaydi.</li>
+  <li><b>D2 gacha yetib bormagan.</b> Navbat boshi mos kelmay, keyingi yozuv aniq mos kelsa — oldingi detal yo'ldan olingan yoki tushib qolgan: <code>tiqilish / d2_tasdiqlamadi</code>, navbat tekislanadi.</li>
+  <li><b>Hech biri mos kelmasa</b> — detal datchik ostida to'xtab qolgan: <code>tiqilish / vaqt_mos_emas</code>, navbat boshi olinadi, tartib buzilmaydi.</li>
+</ol>
+<p>Tezlik yo'lda almashgan bo'lsa (10 ↔ 18) solishtirish o'tkazilmaydi — navbat tartibiga ishoniladi. Avariyali to'xtashda ilingan detallar ham solishtirilmaydi.</p>
+
+<h3>4.4 Tiqilgan detalning tezligi</h3>
+<p>Detal oraliqda to'xtab qolsa <code>dt</code> shishadi va o'lchangan tezlik ishonchsiz bo'ladi. Lekin detalning o'zi datchik ostidan to'liq tezlikda o'tgan, ya'ni <code>t1</code> va <code>t2</code> to'g'ri. Shuning uchun: o'lchangan tezlik nominaldan 20% dan ko'p farq qilsa — <code>tezlik_nomuvofiq</code> ogohi beriladi va uzunlik <b>nominal tezlik</b> bilan hisoblanadi.</p>
+
+<h3>4.5 Avariyali to'xtash</h3>
+<p>Stanok (RUN va 18 kirishlari ikkalasi) 200 ms dan uzoq o'chsa va shu payt yo'lda detal bo'lsa — <code>avariya_toxtash</code> hodisasi va AVARIYA signali. Shu detallarning o'lchovi bekor qilinadi: ular qayta yongach datchikdan chiqsa ham o'lchov chiqmaydi. Stanok o'chiq turganda kutish va yopishib qolish muddatlari sanalmaydi.</p>
+
+<h3>4.6 Datchik nazorati</h3>
+<table>
+<tr><th class="m">sabab</th><th>Shart</th><th>Harakat</th></tr>
+<tr><td class="m">javob_yoq</td><td>Navbat boshi nominal o'tish vaqtidan 5 barobar uzoq kutdi (stanok ishlayapti, datchik ostida detal yo'q)</td><td>Ogoh + AVARIYA. Yozuv navbatda qoladi</td></tr>
+<tr><td class="m">yopishib_qolgan</td><td>Datchik 30 s dan uzoq yopiq</td><td>Ogoh + AVARIYA, datchik vaqtincha chiqariladi</td></tr>
+<tr><td class="m">iflos</td><td>5 ketma-ket detalda bitta datchik uzunroq berdi</td><td>Ogoh — linzani tozalash</td></tr>
+<tr><td class="m">tezlik_nomuvofiq</td><td>O'lchangan tezlik nominaldan 20% farq qildi</td><td>Ogoh; uzunlik nominal tezlik bilan hisoblanadi</td></tr>
+</table>
+
+<h2><span>5</span> Ogohlantirish signallari</h2>
+<p>GP0 dagi bitta rele. <b>Lampa va tovush doim birga</b> yonadi va o'chadi.</p>
+<table>
+<tr><th>Rejim</th><th>Ko'rinishi</th><th>Tugashi</th></tr>
+<tr><td class="m">QR</td><td>0.5 s ichida ikki "tut-tut": 125 ms bor — 125 jim — 125 bor — 125 jim. Ohang <code>HQ</code> (standart 2500 Hz)</td><td>O'zi</td></tr>
+<tr><td class="m">TEST</td><td>Lampa + tovush 1 s</td><td>O'zi</td></tr>
+<tr><td class="m">AVARIYA</td><td>1 s ikkalasi yonadi, 1 s ikkalasi o'chadi. Ohang <code>HA</code> (standart 1500 Hz), bir tekis</td><td><code>STOP</code> buyrug'i</td></tr>
+</table>
+<p>Avariya sabablari: Pico tomonidan — <code>FARQ</code>, <code>FAQAT1/2</code>, <code>tiqilish</code>, datchik nosozliklari, avariyali to'xtash; brauzer tomonidan — o'lcham dopuskdan chiqqanda (<code>ALARM</code>).</p>
+<p><code>AO=1</code> — avariya umuman boshlanmaydi (sozlash paytida). <code>AV=0</code> — avariyada faqat lampa miltillaydi, ovoz chalinmaydi; skaner ovoziga ta'sir qilmaydi.</p>
+
+<h2><span>6</span> Stansiya (brauzer) talablari</h2>
+<ul>
+  <li><b>Avtomatik ulanish:</b> Pico ni USB VID (0x2E8A) bo'yicha tanlaydi, port ruxsati bir marta beriladi va profilda saqlanadi. Kabel uzilib-ulansa o'zi tutadi, ulanmagan bo'lsa har 5 s da urinadi.</li>
+  <li><b>Jimlik nazorati:</b> Pico o'zidan davriy xabar yubormaydi, shuning uchun "port ochiq, lekin aloqa o'lgan" holatini sahifa sezishi shart. 6 s jimlikdan keyin <code>PING</code>, 4 s ichida javob bo'lmasa port yopilib qayta ulanadi.</li>
+  <li><b>Yurak urishi:</b> har 1 s da Pico ga <code>HB</code>. Pico 3 s buyruq ko'rmasa — stansiya yo'q deb biladi va yozuvlarni xotiraga yig'a boshlaydi.</li>
+  <li><b>Hodisalar navbati:</b> MES ga yuborilmagan hodisalar IndexedDB da saqlanadi, faqat server tasdiqlagandan (<code>ack</code>) keyin o'chadi.</li>
+  <li><b>QR:</b> skaner klaviatura sifatida keladi; kod MES dan so'raladi, detal o'lchamlari va kerakli tomonlar soni olinadi.</li>
+  <li><b>Kalibrlash:</b> o'tkazishlar <code>localStorage</code> da saqlanadi, hisob brauzerda bajariladi, natija MES ga va Pico ga yoziladi.</li>
+</ul>
+
+<h2><span>7</span> Protokol: Pico ↔ brauzer</h2>
+<p>USB CDC, 115200, har xabar bitta qator JSON.</p>
+<h3>7.1 Brauzer → Pico</h3>
+<pre>QR | ALARM | STOP | TEST | KALIB 1|0 | HB | PING | HOLAT
+SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=0|1</pre>
+<p><code>SET</code> qiymatlari o'zgarganda Pico ularni <code>kal.json</code> ga yozadi va yonganda o'qiydi — stansiyasiz yonsa ham oxirgi kalibrlash bilan o'lchaydi.</p>
+<h3>7.2 Pico → brauzer</h3>
+<pre>{"ev":"olchov","n":42,"L":2474.5,"kod":"OK","shubha":0,"L1":..,"L2":..,
+ "d1":µs,"d2":µs,"v_olch":17.96,"v_nom":18,"yangi":1,"ish_ms":6650,"farq":2.8,"navbat":3}
+{"ev":"tiqilish","sabab":"birga_otdi|d2_tasdiqlamadi|vaqt_mos_emas","n":2,"L2":1100.0,"L1":[500.0,600.0]}
+{"ev":"avariya_toxtash","d1":1,"d2":0,"oraliq":2,"birga":0}
+{"ev":"ogoh","ch":2,"sabab":"javob_yoq|yopishib_qolgan|iflos|tezlik_nomuvofiq","q":0}
+{"ev":"uskuna","holat":1}   {"ev":"tezlik","v":18}   {"ev":"holat","alarm":1}
+{"ev":"yigilgan","n":12,"yoqolgan":0}   ← xotiradagi yozuvlar chiqishidan oldin
+{"ev":"pong","up":ms}   {"ev":"kal",...}   {"ev":"boot",...}</pre>
+<p>Stansiya jim bo'lsa Pico USB ga umuman yozmaydi (o'qilmayotgan portga yozish kontrollerni qotirishi mumkin): <code>olchov</code>, <code>ogoh</code>, <code>tiqilish</code>, <code>avariya_toxtash</code>, <code>uskuna</code> xotiraga yig'iladi (300 tagacha), qolgani tashlanadi. Stansiya qayta gapirganda har yozuv <code>"eski_ms"</code> (necha ms oldin bo'lgani) bilan chiqadi.</p>
+
+<h2><span>8</span> MES bilan aloqa</h2>
+<h3>8.1 Endpointlar</h3>
+<table>
+<tr><th class="m">So'rov</th><th>Javob / vazifasi</th></tr>
+<tr><td class="m">GET /api/part?qr=..</td><td><code>{code,name,L,W,need}</code> yoki 404</td></tr>
+<tr><td class="m">GET /api/settings?station=..</td><td><code>{station,kal:{D,V10,V18,K1,K2,B1,B2,C,TD,AO,HQ,HA,AV},tol:{detal},updated}</code></td></tr>
+<tr><td class="m">POST /api/settings</td><td><code>{ok,updated}</code> — kalibrlash natijasi saqlanadi</td></tr>
+<tr><td class="m">POST /api/events</td><td><code>{events:[...]}</code> → <code>{ack:[id...]}</code>. <code>id</code> bo'yicha dublikat tashlanadi</td></tr>
+</table>
+<p>Stansiya har 60 s sozlamalarni so'raydi; <code>updated</code> o'zgarsa Pico ga <code>SET</code> yuboriladi.</p>
+
+<h3>8.2 Hodisa turlari</h3>
+<table>
+<tr><th class="m">type</th><th>Qachon</th></tr>
+<tr><td class="m">olchov</td><td>Detal o'lchandi</td></tr>
+<tr><td class="m">tiqilish</td><td>O'lchov ishonchsiz: detallar tiqilgan, birga o'tgan yoki D2 gacha yetmagan. <b>O'lcham chiqarilmaydi</b></td></tr>
+<tr><td class="m">avariya_toxtash</td><td>Stanok yo'lda detal bor paytda to'xtadi — shu detallar o'lchovi bekor</td></tr>
+<tr><td class="m">ogoh</td><td>Datchik nosozligi yoki tezlik nomuvofiqligi</td></tr>
+<tr><td class="m">uskuna / tezlik</td><td>Stanok holati (1/0), rejim (10/18 m/min)</td></tr>
+<tr><td class="m">pico</td><td>Kontroller ulandi (1) yoki uzildi (0)</td></tr>
+</table>
+<p><code>"xotiradan":1</code> bayrog'i — yozuv Pico xotirasidan keyin yetkazilgan; <code>ts</code> hodisa haqiqatda bo'lgan vaqt, ya'ni kelib tushgan vaqtdan ancha oldin bo'lishi mumkin.</p>
+
+<h3>8.3 Skan bilan o'lchovni juftlash <span class="chg">majburiy</span></h3>
+<div class="box warn"><b>Vaqt siljishi</b>Detal D1 dan D2 gacha ~15 s yuradi (10 m/min), 18 m/min da ~8.4 s. Operator esa QR kodlarni 4–10 s da bir marta skanerlaydi. Ya'ni hozir kelayotgan o'lchov — 2–4 ta skan oldin o'tkazilgan detalniki. <b>O'lchovni oxirgi skan bilan solishtirish xato.</b></div>
+<p>Shuning uchun stansiya har o'lchovda detal D1 ga <b>kirgan</b> lahzani ham yuboradi:</p>
+<pre>"ts":        "2026-09-21T03:54:45.000Z"    o'lchov tayyor bo'lgan lahza (D2 dan chiqdi)
+"kirish_ts": "2026-09-21T03:54:29.400Z"    detal D1 ga kirgan lahza
+"ish_ms":    15092.0                        D1 dan D2 gacha, ms</pre>
+<p>MES tomonda juftlash tartibi:</p>
+<ol>
+  <li>Har ish markazi uchun skanlar navbatini saqlash: vaqti, QR, detal o'lchamlari, kerakli tomonlar soni.</li>
+  <li>O'lchov kelganda <code>kirish_ts ± 20 s</code> oynasidan hali to'ldirilmagan skanni olish.</li>
+  <li>Oynada bir nechta nomzod bo'lsa — o'lchamga qarab tanlash (uzun yoki kalta tomon, dopusk ichida).</li>
+  <li>Hech biri mos kelmasa — "noma'lum / skanersiz" deb qo'yish, <b>brak deb belgilamaslik</b>: bu ko'pincha juftlash xatosi.</li>
+  <li><code>kirish_ts</code> bo'lmasa (eski stansiya) — <code>ts − ish_ms</code> dan hisoblash mumkin.</li>
+</ol>
+<p>To'liq tavsif va misollar: <code>docs/onlayn_mes_hodisalar.md</code>.</p>
+
+<h2><span>9</span> Kalibrlash</h2>
+<p>Etalon detallar turli uzunlikda va ikkala tezlikda o'tkaziladi, xom nuqtalar brauzerda saqlanadi, chiziqli eng kichik kvadratlar bilan <code>D, B1, B2, C</code> (va kerak bo'lsa <code>K1, K2</code>) topiladi.</p>
+<ul>
+  <li>1 xil uzunlik → faqat <code>D</code>; 2+ uzunlik → <code>D, B1, B2</code>; 2+ uzunlik va ikkala tezlik → qo'shimcha <code>C</code>.</li>
+  <li>Fizik chegaralar: <code>|B| ≤ 30 mm</code>, <code>|K| ≤ 5 ms</code>, <code>|C| ≤ 10 ms</code> — oshsa soddaroq model olinadi.</li>
+  <li>3σ dan chetdagi nuqtalar tashlanadi. Hisobot tarqoqlikni datchik shovqini va tezlik tebranishiga ajratadi.</li>
+</ul>
+<p><b>2026-09-17 natijasi:</b> 61 o'tkazish, 6 uzunlik × 2 tezlik. <code>D=2553.37 B1=−2.19 B2=−5.73 C=0.885 V10=10.151 V18=18.227</code>. Qoldiq σ = 0.73 mm (2σ ≈ ±1.5 mm).</p>
+<div class="box"><b>Aniqlik haqida</b>Xato uzunlikka proporsional, asosiy hissa lenta tezligining tebranishidan. ±0.5 mm faqat tezlik 0.02% barqaror bo'lsa mumkin. Dopuskni 3 mm dan boshlab, jurnal ma'lumotiga qarab qisqartirish kerak. Bundan yaxshisi dasturiy emas, apparat yechimini talab qiladi: privodga enkoder.</div>
+
+<h2><span>10</span> Ishonchlilik: kompyuter va kiosk sozlamalari</h2>
+<div class="box dan"><b>Majburiy</b>Monoblokda shular sozlanmasa, tizim kun davomida ma'lumot yo'qotadi.</div>
+<ul>
+  <li><b>Uyqu o'chirilgan:</b> <code>powercfg /change standby-timeout-ac 0</code> va <code>hibernate-timeout-ac 0</code>. Uyqudan keyin USB CDC porti tiklanmaydi.</li>
+  <li><b>USB selective suspend o'chirilgan</b> — jim turgan port uyquga qo'yilmasin.</li>
+  <li><b>Kiosk avtoyuklashda:</b> <code>kiosk_ishga_tushirish.bat</code> yorlig'i <code>shell:startup</code> da.</li>
+  <li><b>Chrome bayroqlari:</b> fon sekinlashuvi va yorliqni muzlatish o'chirilgan (<code>--disable-background-timer-throttling</code>, <code>--disable-backgrounding-occluded-windows</code>, <code>--disable-renderer-backgrounding</code>, <code>--disable-features=IntensiveWakeUpThrottling,CalculateNativeWinOcclusion,HighEfficiencyModeAvailable</code>).</li>
+  <li><b>Pico qorovuli (WDT 8 s):</b> stansiya bilan aloqa boshlangach yoqiladi; dastur qotib qolsa Pico qayta yuklanadi va USB qayta ro'yxatdan o'tadi.</li>
+  <li>Bir vaqtda faqat <b>bitta</b> stansiya sahifasi Pico ga ulanishi mumkin — port bandligi sababli.</li>
+</ul>
+
+<h2><span>11</span> Sinov</h2>
+<ul>
+  <li><code>python pico/sinov_pc.py</code> — 38 ssenariy: o'lchov, uzun detal, tiqilish, birga o'tish, yo'qolgan detal, qayta yuklashdan keyingi holat, avariyali to'xtash, signallar, xotiraga yig'ish. <b>Hammasi o'tishi shart.</b></li>
+  <li><code>python pico/sinov_pc.py 40</code> — tasodifiy og'ir sinov (tasodifiy to'xtashlar bilan).</li>
+  <li><code>pico/signal_test.py</code> — QR va avariya signallari vaqtini rele va PWM holatidan o'lchaydi.</li>
+  <li>Jonli tekshiruv: <code>PING</code> → <code>pong</code>, <code>HOLAT</code> → versiya va sozlamalar.</li>
+</ul>
+
+<h2><span>12</span> Versiyalar</h2>
+<table>
+<tr><th class="m">Versiya</th><th>O'zgarish</th></tr>
+<tr><td class="m">v1.18</td><td>Fizik tezlik tekshiruvi — qayta yuklashdan keyin navbat siljimaydi</td></tr>
+<tr><td class="m">v1.17</td><td>Qat'iy navbat: D1 yozuvi D2 tasdiqlamaguncha yo'qolmaydi, vaqt bo'yicha tashlanmaydi</td></tr>
+<tr><td class="m">v1.16</td><td>Juftlashni uzunlik bo'yicha tekshirish, <code>tiqilish</code> hodisasi, tiqilganda nominal tezlik</td></tr>
+<tr><td class="m">v1.15</td><td>Jim portga yozmaslik, qorovul (WDT)</td></tr>
+<tr><td class="m">v1.14</td><td>Rele mantiqi teskari (<code>RELE_YOQ=1</code>) — lampa NO kontaktda</td></tr>
+<tr><td class="m">v1.13</td><td>Stansiyasiz xotiraga yig'ish (<code>HB</code>), <code>kal.json</code>, alohida ohanglar, ovozsiz avariya</td></tr>
+<tr><td class="m">v1.12</td><td>Avariyali to'xtash, yangi QR va avariya signallari</td></tr>
+<tr><td class="m">v1.11</td><td>Har datchikning o'z <code>B</code> tuzatmasi</td></tr>
+<tr><td class="m">v1.10</td><td>Uzun detal (L > D) uchun navbat muddati tuzatildi</td></tr>
+<tr><td class="m">v1.8–1.9</td><td>Navbat (FIFO), TZ dan tashqari pinlar olib tashlandi</td></tr>
+</table>
+
+<h2><span>13</span> Ochiq ishlar</h2>
+<ul>
+  <li><b>MES dasturchilariga:</b> <code>tiqilish</code> hodisasini qabul qilish va ko'rsatish; skan ↔ o'lchov juftlashni <code>kirish_ts</code> bo'yicha qayta yozish (8.3-bo'lim).</li>
+  <li>Ishlab chiqarish stansiyasi sahifasini yangi <code>stansiya.html</code> ga o'tkazish (<code>kirish_ts</code> va tiqilish ko'rsatish shu yerda).</li>
+  <li>Etalonlarni shtangensirkul bilan o'lchab aniq <code>L_ref</code> kiritish va kalibrlashni qayta hisoblash.</li>
+  <li>Ish rejimida <code>AO=0</code> bo'lishi kerak (avariya signali yoqiq).</li>
+  <li><code>docs/</code> dagi eski sxemalar hali GP2/GP6 pinlarini ko'rsatadi — haqiqiy montaj GP1/GP5.</li>
+</ul>
+
+</div>
+</body>
+</html>

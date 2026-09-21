@@ -21,8 +21,10 @@ Brauzerda: `http://localhost:8000` (stansiya), `http://localhost:8000/tablo` (ta
 
 `docs/` papkasida, brauzerda oching va `Ctrl+P` bilan chop eting:
 
-- `TZ_kromka_kontroller.html` — texnik topshiriq v1.2
+- **`TZ_kromka_stansiyasi_v2.html` — amaldagi texnik topshiriq (v2.0, proshivka v1.18)**
+- `onlayn_mes_hodisalar.md` — onlayn MES dasturchisi uchun: hodisa turlari va skan ↔ o'lchov juftlash qoidasi
 - `yigish_sxemasi.html` — to'liq yig'ish sxemasi, 45 sim
 - `onlayn_mes_yoriqnoma.html` — haqiqiy MES ga o'tish, Chrome kiosk, avtomatik sozlash
+- `TZ_kromka_kontroller.html` — eski TZ v1.2 (tarix uchun)
 
 Loyiha konteksti Claude Code uchun: `CLAUDE.md`.

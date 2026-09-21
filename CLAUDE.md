@@ -41,13 +41,14 @@ Foydalanuvchi — muhandis, elektronika bilan tanish lekin dasturchi emas. Tushu
 | `server/kiosk_ishga_tushirish.bat` | Bir bosishda: MES serveri + Chrome kiosk. Avtoyuklash uchun yorlig'ini `shell:startup` ga qo'ying |
 | `server/stansiya.html` | Operator ekrani. Serverdan beriladi (WebSerial uchun https/localhost shart) |
 | `server/tablo.html` | MES ko'rinishi: o'lchovlar, ogohlar, detallar, QR kodlar |
-| `docs/` | TZ, yig'ish sxemasi, montaj yo'riqnomalari — HTML, bosib chiqariladi |
+| `docs/TZ_kromka_stansiyasi_v2.html` | **Amaldagi TZ (v2.0, 2026-09-21)** — proshivka v1.18 holati: navbat qoidalari, tiqilish, signallar, protokol, MES aloqasi, kompyuter sozlamalari. Eski `docs/TZ_kromka_kontroller.html` (v1.2) tarix uchun qoldi |
+| `docs/` | Yig'ish sxemasi, montaj yo'riqnomalari — HTML, bosib chiqariladi |
 | `docs/onlayn_mes_hodisalar.md` | Onlayn MES (mes.mebelix.uz) dasturchisi uchun: `tiqilish` va boshqa hodisalar, skan↔o'lchov juftlash qoidasi |
 | `archive/` | Eski versiyalar, ishlatilmaydi |
 
 ## Apparat — haqiqiy montaj (TZ v1.2, 3-bo'lim)
 
-**Band pinlar faqat shular — TZ dan chiqilmaydi.** Boshqa pinni kodda ishlatmang. Yangi rele yoki kirish qo'shilsa — avval foydalanuvchi bilan TZ yangilanadi, keyin kod.
+**Band pinlar faqat shular — TZ dan chiqilmaydi.** Boshqa pinni kodda ishlatmang. Yangi rele yoki kirish qo'shilsa — avval foydalanuvchi bilan TZ yangilanadi, keyin kod. Amaldagi TZ: `docs/TZ_kromka_stansiyasi_v2.html`.
 
 | GPIO | Pin | Vazifa | Faol |
 |---|---|---|---|
