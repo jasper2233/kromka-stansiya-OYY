@@ -113,20 +113,35 @@ yuboradi:
 
 Tavsiya etilgan juftlash algoritmi (server tomonda):
 
-1. Har ish markazi uchun **skanlar navbatini** saqlang (FIFO): vaqti, QR, detal
-   o'lchamlari (uzun/kalta), nechta tomon kerak.
-2. O'lchov kelganda `kirish_ts` ga eng yaqin, **hali to'ldirilmagan** skanni
-   oling. Oyna: `kirish_ts ± 20 s`.
-3. Oynada bir nechta nomzod bo'lsa — **o'lchamga qarab** tanlang: `measured_mm`
-   skanning uzun yoki kalta tomoniga dopusk ichida (masalan ±3 mm) mos kelsa,
-   o'sha skan. Bu 289 mm ni 700 mm lik detalga yozib qo'yishdan saqlaydi.
-4. Hech bir skan mos kelmasa — yozuvni "skanersiz / noma'lum" deb qo'ying, lekin
+1. Har ish markazi uchun **ochiq skanlar ro'yxatini** saqlang: vaqti, QR, detal
+   o'lchamlari (uzun/kalta), nechta tomon kerak (`need`), nechtasi bajarilgan.
+   Skan `need` ta o'lchov to'lgunicha yoki 5 daqiqa o'tgunicha **ochiq** turadi.
+2. O'lchov kelganda `kirish_ts` bo'yicha nomzodlarni tanlang: oyna
+   `kirish_ts − 60 s … kirish_ts + 20 s` (detal skanerlangandan keyin stanokka
+   qo'yiladi, ba'zan bir necha detal oldindan skanerlanadi).
+3. Nomzodlar orasidan **o'lchamga qarab** tanlang: `measured_mm` skanning uzun
+   yoki kalta tomoniga dopusk ichida (masalan ±3 mm) mos kelishi shart. Mos
+   keladiganlari bir nechta bo'lsa — eng eskisi (FIFO) va hali to'lmagani.
+   Bu 289 mm ni 700 mm lik detalga yozib qo'yishdan saqlaydi.
+4. **Ortiqcha o'tish** faqat shunda: o'lcham skanga mos keldi, lekin o'sha skan
+   uchun allaqachon `need` ta o'lchov yozilgan. Boshqa hollarda "ortiqcha o'tish"
+   deb belgilamang — bu juftlash xatosi bo'lishi mumkin.
+5. Hech bir skan mos kelmasa — yozuvni "skanersiz / noma'lum" deb qo'ying, lekin
    **"Mos emas" (brak) deb belgilamang**: bu ko'pincha juftlash xatosi, detal
    nuqsoni emas.
-5. `kirish_ts` bo'lmasa (eski stansiya), uni `ts − ish_ms` dan hisoblash mumkin.
+6. `kirish_ts` bo'lmasa (eski stansiya), uni `ts − ish_ms` dan hisoblash mumkin.
 
-Shu qoidadan keyin yuqoridagi "ikki yozuv" muammosi yo'qoladi: har detal bitta
-skanga yopishadi, ortiqcha o'lchovlar esa o'z skanini topadi.
+### Nega uzun va kalta detallarda boshqacha ko'rinadi
+
+Ikki datchik orasi 2553 mm. Uzun detal (1860 mm) o'tganda oraliqda 1 ta detal
+bo'ladi, kalta detal (150–650 mm) o'tganda esa **4–17 tagacha**. Ya'ni kalta
+detallarda o'lchov bilan skan orasidagi siljish ancha katta: shuning uchun
+"ortiqcha o'tish" kalta detallarda paydo bo'lib, uzun detallarda umuman
+qayd qilinmay qolgan (2026-09-21 shikoyati). Vaqt bo'yicha emas, **`kirish_ts`
+va o'lcham bo'yicha** juftlaganda ikkala holat ham to'g'ri ishlaydi.
+
+Shu qoidadan keyin "ikki yozuv" muammosi yo'qoladi: har detal bitta skanga
+yopishadi, ortiqcha o'lchovlar esa o'z skanini topadi.
 
 ---
 

@@ -553,17 +553,18 @@ def S35():
             and len(o) == 1 and o[0]['kod'] == 'OK' and abs(o[0]['L'] - 1200) < 20, CHIQ)
 
 def S36():
-    # D2 butunlay ko'rmasa, navbat KUTUV_MAX gacha to'ladi va shundan keyingina
+    # D2 butunlay ko'rmasa, navbat sig'imgacha to'ladi va shundan keyingina
     # eng eskisi FAQAT1 bo'lib chiqadi — ya'ni ma'lumot yo'qolmaydi, kechikadi.
     l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
     l.d2_kor = False
-    for _ in range(M.KUTUV_MAX + 2):
+    sigim = M.kutuv_sigimi()
+    for _ in range(sigim + 2):
         l.qoy(500); l.yur(4000)
     l.yur(20000)
     o = olchovlar()
     tekshir('36 D2 o\'lgan bo\'lsa navbat to\'lgach FAQAT1 chiqa boshlaydi',
-            len(o) >= 1 and all(e['kod'] == 'FAQAT1' for e in o) and len(M.kutuv) <= M.KUTUV_MAX,
-            [len(o), [e['kod'] for e in o], len(M.kutuv)])
+            len(o) >= 1 and all(e['kod'] == 'FAQAT1' for e in o) and len(M.kutuv) <= sigim,
+            [len(o), [e['kod'] for e in o], len(M.kutuv), sigim])
 
 def S37():
     # 2026-09-21 talabi: D1 dan o'tgan detalni D2 TASDIQLAMASDAN turib, 2-6 s
@@ -602,6 +603,39 @@ def S38():
             len(o) == 3 and kod[0] == 'FAQAT2' and kod[1] == 'OK' and kod[2] == 'OK'
             and not tez and all(abs(e['L'] - 447) < 15 for e in o),
             [kod, [round(e['L'], 1) for e in o], len(tez)])
+
+def S39():
+    # 2026-09-21 shikoyati: eng kichik detal 150 mm. Ular ketma-ket, kichik
+    # oraliq bilan kelsa, D1 va D2 orasida (2553 mm) bir vaqtda 14-17 tasi
+    # bo'ladi. Navbat sig'imi 12 ta bo'lganda eng eski yozuv D2 tasdiqlamasdan
+    # chiqib ketardi va navbat siljirdi (uzun detallarda bu hech qachon
+    # bo'lmasdi — shuning uchun muammo faqat kalta detallarda ko'rinardi).
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    N = 16
+    for i in range(N):                       # 150 mm detal + 40 mm oraliq
+        l.qoy(150.0, old=-50.0 - i * 190.0)
+    l.yur(120000)
+    o = olchovlar()
+    tekshir('39 150 mm detallar ketma-ket: hammasi to\'g\'ri, navbat siljimaydi',
+            len(o) == N and all(e['kod'] == 'OK' for e in o)
+            and all(abs(e['L'] - 150) < 10 for e in o)
+            and not [e for e in CHIQ if e['ev'] == 'tiqilish'],
+            [len(o), [e['kod'] for e in o][:6], [round(e['L'], 1) for e in o][:6]])
+
+def S40():
+    # Turli uzunlikdagi detallar aralash kelganda juftlash chalkashmasin
+    # (650 va 800 mm ilgari "bir xil" deb qabul qilinardi — chegara 25% edi).
+    l = yangi_holat(); l.run = True; l.pin_run(); l.yur(300)
+    uzunlik = [650, 800, 650, 1860, 150, 1100]
+    for L in uzunlik:
+        l.qoy(L); yetib_bor_oxirgi(l, L + 150); l.yur(1500)
+    l.yur(90000)
+    o = olchovlar()
+    olch = [round(e['L']) for e in o]
+    tekshir('40 aralash uzunliklar (650/800/1860/150/1100) to\'g\'ri juftlanadi',
+            len(o) == len(uzunlik) and all(e['kod'] == 'OK' for e in o)
+            and all(abs(olch[i] - uzunlik[i]) < 15 for i in range(len(uzunlik))),
+            [olch, [e['kod'] for e in o]])
 
 def yetib_bor_oxirgi(l, x, ms_max=120000):
     """Oxirgi qo'yilgan detal old qirrasi x ga yetguncha yurgizish."""

@@ -1,4 +1,4 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.18)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.19)
 #
 # OYOQCHALAR — TZ 3-bo'lim, boshqa pin ishlatilmaydi:
 #   GP1  (2-pin)   <- datchik 1 optopara 4-oyoq   (kirish)
@@ -240,15 +240,36 @@ kuzat = {1: {'us': None, 'ms': None, 'yopiq': False, 'stuck': False, 'bekor': Fa
 
 # D1 dan o'tib bo'lgan, D2 ni kutayotgan detallar navbati (FIFO).
 kutuv = []
-KUTUV_MAX = 12       # oraliqqa sig'adigan detaldan ko'p bo'lsa — nimadir noto'g'ri
+
+# NAVBAT SIG'IMI (v1.19). Eng kichik detal 150 mm (stanok shundan kichigini
+# o'tkazmaydi). Ular bir-biriga tiqilib kelsa, D1 va D2 orasidagi 2553 mm da
+# BIR VAQTDA 17 tagacha detal bo'ladi. Ilgari sig'im 12 ta edi — kalta detallar
+# ketma-ket tiqilganda navbat to'lib, eng eski yozuv D2 TASDIQLAMASDAN turib
+# chiqib ketardi (FAQAT1) va navbat siljirdi. Uzun detallarda (1100+ mm) bu
+# hech qachon sodir bo'lmasdi — shuning uchun muammo faqat kalta detallarda
+# ko'rinardi (2026-09-21 shikoyati). Endi sig'im masofadan hisoblanadi.
+MIN_DETAL = 150.0    # eng kichik detal uzunligi, mm
+KUTUV_ZAX = 4        # zaxira joy (o'lchov xatosi va qirqim uchun)
+
+# Nominal tezlik (10/18) oxirgi marta qachon almashgani. Shu lahzadan keyin
+# boshlangan detal to'liq bitta tezlikda o'tgan; undan oldingilari aralash —
+# ular uchun uzunlikni solishtirib bo'lmaydi.
+TEZ = {'us': 0}
+
+def kutuv_sigimi():
+    if KAL['D'] <= 0 or MIN_DETAL <= 0:
+        return 24
+    return min(40, int(KAL['D'] / MIN_DETAL) + KUTUV_ZAX)
 
 # JUFTLASHNI TEKSHIRISH (v1.16). Bitta detalning D1 va D2 dagi vaqti deyarli
-# bir xil bo'ladi. Katta farq — bu boshqa detal: tiqilib birga o'tgan, yoki
-# datchik ostida to'xtab qolgan. Linza ifloslanishi millimetr beradi (TD),
-# tiqilish esa o'nlab santimetr — shuning uchun chegara keng.
-JUFT_TOL  = 0.25     # 25% nisbiy chegara (kichik uzunlikdan)
-JUFT_MIN  = 30.0     # kamida shuncha mm — qisqa detallar uchun
-TIQ_MAX   = 4        # oraliqqa sig'adigan detal soni (D=2555 mm)
+# bir xil bo'ladi (2026-09-17 o'lchovida farq eng ko'pi 6.4 mm). Katta farq —
+# bu boshqa detal: tiqilib birga o'tgan yoki datchik ostida to'xtab qolgan.
+# v1.19: chegara torroq. Ilgari 25% edi — 650 mm va 800 mm detallar ham
+# "bir xil" bo'lib ketardi. Endi 3% yoki kamida 30 mm: bitta detalning ikki
+# datchikdagi farqidan katta, lekin ro'yxatdagi turli detallar farqidan kichik.
+JUFT_TOL  = 0.03     # 3% nisbiy chegara (kichik uzunlikdan)
+JUFT_MIN  = 30.0     # kamida shuncha mm
+TIQ_MAX   = 8        # birga o'tishi mumkin bo'lgan detal soni (kalta detallar uchun)
 KUT_KARRA = 5        # D2 ni kutish muddati: D/v ning shuncha karrasi (~78 s)
 
 def qur(kanal, gpio):
@@ -440,9 +461,13 @@ def d1_tugadi(us, ms, dur, bekor=False):
     kutuv.append({'us': us, 'ms': ms, 'dur': dur, 'S': tezlik_nom(), 'bekor': bekor})
     chop("  > D1 o'tkazdi (%.0f ms)%s, navbatda %d ta"
          % (dur / 1000.0, ' — BEKOR' if bekor else '', len(kutuv)))
-    if len(kutuv) > KUTUV_MAX:
-        # Oraliqqa sig'adiganidan ko'p to'planib qoldi — eng eskisi yo'qolgan.
+    if len(kutuv) > kutuv_sigimi():
+        # Oraliqqa jismonan sig'adiganidan ko'p to'planib qoldi — eng eskisini
+        # D2 ko'rmagan (datchik o'lgan yoki detal yo'qolgan). Bu yagona joy
+        # bo'lib, unda yozuv D2 tasdig'isiz chiqadi; sig'im eng kichik detal
+        # (150 mm) bo'yicha hisoblangani uchun normal ishda bunga yetilmaydi.
         r = kutuv.pop(0)
+        chop("  !! NAVBAT TO'LDI (%d ta) — eng eskisi D2 tasdig'isiz yopildi" % len(kutuv))
         if not r['bekor']:
             yakunla(r, None, None)
 
@@ -544,9 +569,12 @@ def d2_tugadi(us, dur, bekor=False, juft_d1=False):
     d2_mm = _mm(dur, tezlik_nom())
     if juft_d1:
         turi, rlar = ('mos_yoq', [])
-    elif kutuv and kutuv[0]['S'] != tezlik_nom():
-        # Detal yo'lda ekan tezlik almashgan — nominal tezlik bilan hisoblangan
-        # uzunliklarni solishtirib bo'lmaydi. Navbat tartibiga ishonamiz.
+    elif kutuv and (kutuv[0]['S'] != tezlik_nom()
+                    or time.ticks_diff(TEZ['us'], kutuv[0]['us']) >= 0):
+        # Detal D1 dan o'tayotganda yoki yo'lda ekan tezlik almashgan. Bunda
+        # nominal tezlik bilan hisoblangan uzunliklarni solishtirib bo'lmaydi:
+        # detalning bir qismi 10 m/min da, qolgani 18 da o'tgan bo'ladi.
+        # Navbat tartibiga ishonamiz.
         turi, rlar = ('juft', kutuv[:1])
     else:
         turi, rlar = juftni_tanla(d2_mm)
@@ -583,7 +611,7 @@ def kutuvni_tekshir(hozir_ms):
     tashlandi: D1 dan kelgan yozuv D2 tasdiqlamaguncha navbatda TURADI.
 
     Uzoq kutish faqat OGOHLANTIRISH sababi: D2 datchigi javob bermayotgan
-    bo'lishi mumkin. Navbat esa `KUTUV_MAX` oshgandagina qisqaradi
+    bo'lishi mumkin. Navbat esa `kutuv_sigimi()` oshgandagina qisqaradi
     (`d1_tugadi` ichida) — ya'ni oraliqqa sig'maydigan darajada to'planganda.
     """
     if not ishlayapti() or not kutuv:
@@ -779,14 +807,14 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.18'})
+                  'ver': '1.19'})
         yubor(d)
 
 # ================= BOSHLANISH =================
 yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.18")
+    print("  KROMKA STANSIYASI KONTROLLERI  v1.19")
     print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  AUDIO=GP%d"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")
@@ -865,6 +893,7 @@ def qadam():
     v = tezlik_nom()
     if v != v_old:
         v_old = v
+        TEZ['us'] = time.ticks_us()      # shu lahzadan oldingi o'lchovlar aralash tezlikda
         yubor({'ev': 'tezlik', 'v': v})
         chop("  tezlik: %d m/min" % v)
 

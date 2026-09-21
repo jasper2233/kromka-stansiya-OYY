@@ -39,7 +39,7 @@ pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px s
   <div class="k">Texnik topshiriq</div>
   <h1>Kromka stansiyasi — o'lchov va MES ga uzatish</h1>
   <p>Detal uzunligini ikki fotoelektrik datchik bilan o'lchash, tiqilish va nosozliklarni aniqlash, natijani MES ga uzatish, ovoz va yorug'lik bilan ogohlantirish</p>
-  <div class="meta"><span>Versiya 2.0</span><span>21 sentyabr 2026</span><span>Proshivka v1.18</span><span>Kontroller: Raspberry Pi Pico</span></div>
+  <div class="meta"><span>Versiya 2.1</span><span>21 sentyabr 2026</span><span>Proshivka v1.19</span><span>Kontroller: Raspberry Pi Pico</span></div>
 </div>
 
 <p>Bu hujjat v1.2 (6 sentyabr) TZ sining o'rnini bosadi. v1.2 da apparat ulanishi to'g'ri yozilgan, lekin o'lchash mantiqi, signallar va MES bilan aloqa shundan keyin sezilarli o'zgardi. Eski hujjat <code>docs/TZ_kromka_kontroller.html</code> da tarix sifatida qoladi.</p>
@@ -110,17 +110,18 @@ L2     = v·(t2 − K2) − B2
 </table>
 
 <h3>4.3 Navbat — D1 va D2 ni juftlash <span class="chg">v1.17/v1.18</span></h3>
-<p>Datchiklar orasi ≈2553 mm, ya'ni yo'lda bir vaqtda 4–6 ta detal bo'lishi mumkin. D1 tugatgan har detal <b>navbatga (FIFO)</b> yoziladi, D2 tugatganda eng eskisi bilan juftlanadi. Lenta transporter — detallar bir-birini quvib o'tmaydi, shuning uchun tartib bir xil.</p>
+<p>Datchiklar orasi ≈2553 mm. D1 tugatgan har detal <b>navbatga (FIFO)</b> yoziladi, D2 tugatganda eng eskisi bilan juftlanadi. Lenta transporter — detallar bir-birini quvib o'tmaydi, shuning uchun tartib bir xil.</p>
+<div class="box warn"><b>Navbat sig'imi detal uzunligiga bog'liq</b>Eng kichik detal <b>150 mm</b> (stanok shundan kichigini o'tkazmaydi). Ular ketma-ket tiqilib kelsa, oraliqda bir vaqtda <b>17 tagacha</b> detal bo'ladi; 650 mm da — 4 ta; 1860 mm da — 1 ta. Shuning uchun navbat sig'imi qat'iy son emas, masofadan hisoblanadi: <code>D / 150 + 4 ≈ 21</code>. Ilgari sig'im 12 ta edi — kalta detallar tiqilganda navbat to'lib, eng eski yozuv D2 tasdiqlamasdan chiqib ketardi va navbat siljirdi. Uzun detallarda bu hech qachon sodir bo'lmasdi, shuning uchun muammo faqat kalta detallarda ko'rinardi.</div>
 <div class="box dan"><b>Asosiy qoida</b>D1 dan kelgan yozuv D2 tasdiqlamaguncha navbatdan yo'qolmaydi, ustiga yangi o'lchov tushmaydi va navbat boshi sababsiz o'tkazib yuborilmaydi. <b>Vaqt bo'yicha hech narsa tashlanmaydi.</b> Navbat faqat D2 tasdiqlaganda yoki 12 tadan oshganda qisqaradi.</div>
 <p>D2 detalni o'tkazganda quyidagi tekshiruvlar ketma-ket bajariladi:</p>
 <ol>
   <li><b>Fizik tezlik tekshiruvi.</b> Detal D1 dan D2 gacha lentadan tez yura olmaydi. Agar <code>dt &lt; D/(v_nom·1.2)</code> bo'lsa — navbat boshidagi yozuv bu detalniki emas (masalan Pico qayta yuklangandan keyin yo'lda qolgan detallar D1 yozuvisiz keladi). Yozuv <b>navbatda qoladi</b>, o'lchov faqat D2 bo'yicha chiqadi (FAQAT2), navbat o'zi tekislanadi.</li>
-  <li><b>Uzunlik bo'yicha solishtirish.</b> Bitta detalning D1 va D2 dagi vaqti deyarli bir xil bo'ladi. Chegara: 25% yoki kamida 30 mm (kichik uzunlikdan). Navbat boshi mos kelsa — normal juftlik.</li>
+  <li><b>Uzunlik bo'yicha solishtirish.</b> Bitta detalning D1 va D2 dagi vaqti deyarli bir xil bo'ladi (kuzatilgan eng katta farq 6.4 mm). Chegara: <b>3% yoki kamida 30 mm</b> (kichik uzunlikdan). Ilgari 25% edi — 650 va 800 mm detallar "bir xil" bo'lib ketardi. Navbat boshi mos kelsa — normal juftlik.</li>
   <li><b>Birga o'tish.</b> Navbatdagi bir necha yozuvning yig'indisi mos kelsa — detallar bir-biriga tiqilib, D2 dan birga o'tgan: <code>tiqilish / birga_otdi</code>, o'lchov chiqarilmaydi.</li>
   <li><b>D2 gacha yetib bormagan.</b> Navbat boshi mos kelmay, keyingi yozuv aniq mos kelsa — oldingi detal yo'ldan olingan yoki tushib qolgan: <code>tiqilish / d2_tasdiqlamadi</code>, navbat tekislanadi.</li>
   <li><b>Hech biri mos kelmasa</b> — detal datchik ostida to'xtab qolgan: <code>tiqilish / vaqt_mos_emas</code>, navbat boshi olinadi, tartib buzilmaydi.</li>
 </ol>
-<p>Tezlik yo'lda almashgan bo'lsa (10 ↔ 18) solishtirish o'tkazilmaydi — navbat tartibiga ishoniladi. Avariyali to'xtashda ilingan detallar ham solishtirilmaydi.</p>
+<p>Detal D1 dan o'tayotganda yoki yo'lda ekan tezlik almashgan bo'lsa (10 ↔ 18), uzunlik solishtirilmaydi — detalning bir qismi bir tezlikda, qolgani boshqasida o'tgan bo'ladi. Bunda navbat tartibiga ishoniladi. Avariyali to'xtashda ilingan detallar ham solishtirilmaydi.</p>
 
 <h3>4.4 Tiqilgan detalning tezligi</h3>
 <p>Detal oraliqda to'xtab qolsa <code>dt</code> shishadi va o'lchangan tezlik ishonchsiz bo'ladi. Lekin detalning o'zi datchik ostidan to'liq tezlikda o'tgan, ya'ni <code>t1</code> va <code>t2</code> to'g'ri. Shuning uchun: o'lchangan tezlik nominaldan 20% dan ko'p farq qilsa — <code>tezlik_nomuvofiq</code> ogohi beriladi va uzunlik <b>nominal tezlik</b> bilan hisoblanadi.</p>
@@ -200,15 +201,17 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 
 <h3>8.3 Skan bilan o'lchovni juftlash <span class="chg">majburiy</span></h3>
 <div class="box warn"><b>Vaqt siljishi</b>Detal D1 dan D2 gacha ~15 s yuradi (10 m/min), 18 m/min da ~8.4 s. Operator esa QR kodlarni 4–10 s da bir marta skanerlaydi. Ya'ni hozir kelayotgan o'lchov — 2–4 ta skan oldin o'tkazilgan detalniki. <b>O'lchovni oxirgi skan bilan solishtirish xato.</b></div>
+<p>Siljish detal uzunligiga bog'liq: uzun detal (1860 mm) o'tganda oraliqda 1 ta detal bo'ladi, kalta detal (150–650 mm) da esa 4–17 ta. Shu sababli <b>"ortiqcha o'tish" kalta detallarda paydo bo'lib, uzun detallarda umuman qayd qilinmay qolgan</b> (2026-09-21 kuzatuvi). Vaqt emas, <code>kirish_ts</code> va o'lcham bo'yicha juftlanganda ikkala holat ham to'g'ri ishlaydi.</p>
 <p>Shuning uchun stansiya har o'lchovda detal D1 ga <b>kirgan</b> lahzani ham yuboradi:</p>
 <pre>"ts":        "2026-09-21T03:54:45.000Z"    o'lchov tayyor bo'lgan lahza (D2 dan chiqdi)
 "kirish_ts": "2026-09-21T03:54:29.400Z"    detal D1 ga kirgan lahza
 "ish_ms":    15092.0                        D1 dan D2 gacha, ms</pre>
 <p>MES tomonda juftlash tartibi:</p>
 <ol>
-  <li>Har ish markazi uchun skanlar navbatini saqlash: vaqti, QR, detal o'lchamlari, kerakli tomonlar soni.</li>
-  <li>O'lchov kelganda <code>kirish_ts ± 20 s</code> oynasidan hali to'ldirilmagan skanni olish.</li>
-  <li>Oynada bir nechta nomzod bo'lsa — o'lchamga qarab tanlash (uzun yoki kalta tomon, dopusk ichida).</li>
+  <li>Har ish markazi uchun <b>ochiq skanlar</b> ro'yxatini saqlash: vaqti, QR, detal o'lchamlari, kerakli tomonlar soni (<code>need</code>), bajarilgani. Skan <code>need</code> to'lgunicha yoki 5 daqiqa o'tgunicha ochiq turadi.</li>
+  <li>O'lchov kelganda nomzodlarni <code>kirish_ts − 60 s … kirish_ts + 20 s</code> oynasidan olish.</li>
+  <li>Nomzodlar orasidan o'lchamga qarab tanlash: <code>measured_mm</code> skanning uzun yoki kalta tomoniga dopusk ichida mos kelishi shart. Bir nechtasi mos kelsa — eng eskisi va hali to'lmagani.</li>
+  <li><b>"Ortiqcha o'tish"</b> faqat shunda: o'lcham skanga mos keldi, lekin o'sha skanga allaqachon <code>need</code> ta o'lchov yozilgan.</li>
   <li>Hech biri mos kelmasa — "noma'lum / skanersiz" deb qo'yish, <b>brak deb belgilamaslik</b>: bu ko'pincha juftlash xatosi.</li>
   <li><code>kirish_ts</code> bo'lmasa (eski stansiya) — <code>ts − ish_ms</code> dan hisoblash mumkin.</li>
 </ol>
@@ -246,6 +249,7 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 <h2><span>12</span> Versiyalar</h2>
 <table>
 <tr><th class="m">Versiya</th><th>O'zgarish</th></tr>
+<tr><td class="m">v1.19</td><td>Navbat sig'imi eng kichik detal (150 mm) bo'yicha hisoblanadi; juftlash chegarasi 25% → 3%; tezlik almashgan detallar solishtirilmaydi</td></tr>
 <tr><td class="m">v1.18</td><td>Fizik tezlik tekshiruvi — qayta yuklashdan keyin navbat siljimaydi</td></tr>
 <tr><td class="m">v1.17</td><td>Qat'iy navbat: D1 yozuvi D2 tasdiqlamaguncha yo'qolmaydi, vaqt bo'yicha tashlanmaydi</td></tr>
 <tr><td class="m">v1.16</td><td>Juftlashni uzunlik bo'yicha tekshirish, <code>tiqilish</code> hodisasi, tiqilganda nominal tezlik</td></tr>
