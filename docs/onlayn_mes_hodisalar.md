@@ -145,7 +145,78 @@ yopishadi, ortiqcha o'lchovlar esa o'z skanini topadi.
 
 ---
 
-## 6. Stansiya yuboradigan barcha turlar
+## 6. YANGI (v1.20): ovoz MES tomonida — `sig` hodisasi va faza qoidasi
+
+Proshivka **v1.20** (2026-09-23) dan **Pico ovoz chiqarmaydi**. Ilgari GP16 dagi
+PWM usilitelga ohang berardi — o'sha mantiq butunlay olib tashlandi. Pico endi
+faqat **lampani** boshqaradi (GP0 rele). **Tovushni stansiya sahifasi chaladi**
+(kompyuter dinamigi) — ya'ni Pico ga WebSerial bilan ulangan sahifa. Bu MES
+tomonidagi ish.
+
+### `sig` — lampa holati almashdi
+
+Pico rele holatini har o'zgartirganda USB (WebSerial) orqali shu qatorni yuboradi:
+
+```json
+{"ev":"sig","r":"avariya","on":1,"ms":1000}
+```
+
+| Maydon | Ma'nosi |
+|---|---|
+| `r` | Rejim: `qr` (skaner o'qidi), `avariya`, `test`, `idle` (signal tugadi) |
+| `on` | `1` — lampa **shu lahzada** yondi, ovozni boshlang; `0` — o'chdi, ovozni to'xtatib turing |
+| `ms` | Shu bosqich qancha davom etadi: `qr` — 125, `avariya` — 1000, `test` — 1000. `on:0` da 0 |
+
+Bu hodisa **MES serveriga yuborilmaydi** (`POST /api/events` ga tushmaydi) —
+u faqat Pico bilan sahifa orasidagi buyruq. Serverda hech narsa qilish kerak emas.
+
+### QOIDA: fazani Pico beradi, taymer EMAS
+
+Ovozni **aynan `sig` xabari kelganda** boshlang va `on:0` da to'xtating. O'z
+taymeringiz bilan (`setInterval(1000)`) chalmang: kompyuter va Pico soatlari bir
+xil yurmaydi, 1 soniyada 1 ms xato ham **10 daqiqada yarim faza** beradi — chiroq
+yonganda ovoz jim, o'chganda ovoz chalinadigan holatga kelib qoladi
+("oldin-ketin"). `sig` bo'yicha chalinganda esa qolgan kechikish faqat USB va
+audio — ≈10–20 ms, u **doimiy** va quloq/ko'z uchun sezilmaydi.
+
+`ms` — zaxira: xabar yo'qolsa ham ovoz shu muddatdan keyin o'zi tinadi, cheksiz
+chalinib qolmaydi.
+
+### Ohang va "avariya ovozi" sozlamalari
+
+`GET /api/settings` dagi `kal` ichida keladi (o'zgarmadi):
+
+| Kalit | Ma'nosi |
+|---|---|
+| `HQ` | Skaner (`qr`) ohangi, Hz — standart 2500 |
+| `HA` | Avariya ohangi, Hz — standart 1500 |
+| `AV` | Avariya **ovozi**: 1 yoqiq, 0 o'chiq. `0` bo'lsa `r:"avariya"` da ovoz chalinmaydi, **lampa baribir miltillaydi**. Skaner ovoziga ta'sir qilmaydi |
+
+Pico bu uchtasini hamon qabul qiladi, `kal.json` ga saqlaydi va `HOLAT`/`SET`
+javobida qaytaradi — lekin **o'zi ishlatmaydi**. Ular shu yerda faqat markazda
+(MES da) turishi uchun saqlanadi: sozlamani bitta joydan boshqarasiz.
+
+`AO=1` (avariya signali o'chiq) bo'lsa Pico lampani ham yoqmaydi va `sig` ham
+yubormaydi — demak ovoz ham bo'lmaydi. Hodisalar baribir MES ga yoziladi.
+
+### Amalga oshirilgan namuna
+
+`server/stansiya.html` dagi `onSig()` va `tovush()` funksiyalari — ishlaydigan
+namuna (Web Audio, kvadrat to'lqin, 5 ms yumshoq kirish/chiqish — "klik"
+bo'lmasligi uchun). Shundan nusxa olish mumkin.
+
+**Muhim texnik shart:** Chrome sahifa ovozini foydalanuvchi biror joyni
+bosmaguncha bermaydi. Kioskda hech kim bosmasligi mumkin — shuning uchun Chrome
+`--autoplay-policy=no-user-gesture-required` bayrog'i bilan ochilishi kerak
+(`server/kiosk_ishga_tushirish.bat` da qo'shilgan). Zaxira sifatida sahifa
+birinchi tugma bosilishida ham audioni ochadi.
+
+**Operatsion natija:** stansiya sahifasi yopiq bo'lsa yoki kompyuter o'chiq bo'lsa
+**ovoz bo'lmaydi — faqat lampa miltillaydi**. Ilgari sirena Pico dan chalinardi va
+kompyuterga bog'liq emasdi. Shuning uchun kiosk `shell:startup` da turishi va
+uyqu o'chirilgani muhim (2026-09-20 dagi sozlamalar).
+
+## 7. Stansiya yuboradigan barcha turlar
 
 | `type` | Qachon |
 |---|---|

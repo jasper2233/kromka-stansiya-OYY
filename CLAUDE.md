@@ -4,7 +4,7 @@ Bu fayl Claude Code uchun. Loyiha tili — **o'zbek** (kod izohlari, UI, hujjatl
 
 ## Nima bu
 
-Mebel kromka yopishtirish uskunasidan o'tayotgan detalning uzunligini ikkita fotoelektrik datchik bilan o'lchab, QR kod orqali MES dagi kutilgan o'lcham bilan solishtiradigan tizim. Nomuvofiqlik yoki datchik nosozligida sirena va lampa bilan ogohlantiradi.
+Mebel kromka yopishtirish uskunasidan o'tayotgan detalning uzunligini ikkita fotoelektrik datchik bilan o'lchab, QR kod orqali MES dagi kutilgan o'lcham bilan solishtiradigan tizim. Nomuvofiqlik yoki datchik nosozligida lampa va ovoz bilan ogohlantiradi (v1.20 dan lampa — Pico da, ovoz — stansiya sahifasida).
 
 Foydalanuvchi — muhandis, elektronika bilan tanish lekin dasturchi emas. Tushuntirishlar aniq, misollar bilan.
 
@@ -14,7 +14,8 @@ Foydalanuvchi — muhandis, elektronika bilan tanish lekin dasturchi emas. Tushu
 [Datchik D1] → PC817 → GP1 ┐
 [Datchik D2] → PC817 → GP5 ├→ [Pico, MicroPython] ←USB→ [Chrome kiosk, stansiya.html] ←HTTPS→ [MES server]
 [RUN 24V]    → PC817 → GP9 │        ↓ GP0 rele → lampa                                          ↓
-[18 m/min]   → PC817 → GP13┘        ↓ GP16 PWM → XH-M564 usilitel → dinamik              [SQLite / tablo.html]
+[18 m/min]   → PC817 → GP13┘        (GP16 → usilitel: v1.20 dan ishlatilmaydi,   [SQLite / tablo.html]
+                                     ovozni stansiya sahifasi chaladi)
 ```
 
 - **Pico** vaqtni mikrosekundda o'lchaydi, JSON yuboradi, buyruq qabul qiladi. Mantiq minimal.
@@ -85,7 +86,7 @@ Brauzer → Pico (matn + `\n`): `QR` `ALARM` `STOP` `TEST` `KALIB 1|0` `SET D=..
 - `HQ`/`HA` — skaner va avariya ohangi (Hz), `AV` — avariya ovozi (0 = ovozsiz, lampa baribir miltillaydi; skaner ovoziga ta'sir qilmaydi).
 - SET qiymatlari o'zgarsa Pico `kal.json` ga yozadi va yonganda o'qiydi — stansiyasiz yonsa ham oxirgi kalibrlash bilan o'lchaydi.
 
-- `AO=1` — lampa/sirena chalinmaydi (sozlash paytida), hodisalar baribir yuboriladi.
+- `AO=1` — lampa yonmaydi va `sig` yuborilmaydi (sozlash paytida), hodisalar baribir yuboriladi.
 - Pico dagi standart qiymatlar: `D=2555 TD=12 AO=0`. Stansiya ulanganda o'z sozlamasini `SET` bilan yuboradi — shuning uchun stansiya va MES dagi qiymatlar ustun.
 
 Eski `SET K=..` ham qabul qilinadi — ikkala datchikka bir xil qiymat tushadi.
@@ -114,14 +115,18 @@ Eski `SET K=..` ham qabul qilinadi — ikkala datchikka bir xil qiymat tushadi.
 
 ## Ogohlantirish
 
-GP0 dagi bitta rele. Lampa va tovush **doim birga** — `signal(yon)` bitta chaqiriqda. Ohang bitta: `TON_HZ = 2500` (baland `tut`), chastota faqat bir marta o'rnatiladi — `freq()` qayta chaqirilsa chirsillaydi. 2026-09-17 foydalanuvchi talabi bilan o'zgardi (TZ 7-bo'lim hujjati hali eski):
-- Ohanglar alohida (v1.13): skaner `HQ` (standart 2500 Hz), avariya `HA` (1500 Hz). **Avariya ovozi** `AV` — o'chirilsa avariyada faqat lampa, skaner ovozi baribir chaladi. Stansiyada sarlavhadagi "avariya ovozi" tugmasi va "Signal sinovi" paneli (ohangni eshitib tanlash, skaner sinovi — MES ga yozilmaydi).
-- `QR`: **0.5 s ichida 2 ta tut-tut**, lampa birga: 125 bor — 125 jim — 125 bor — 125 jim (`QR_MS`). Ilgari 150/150/150, 1000 Hz.
-- `TEST`: lampa + tovush 1 s.
-- `AVARIYA`: 1 s ikkalasi yonadi (bir tekis ohang), 1 s ikkalasi o'chadi, `STOP` gacha. Ilgari yongan paytda 800/1200 Hz almashardi — foydalanuvchi `buzuq, lampaga mos emas` dedi.
+**v1.20 (2026-09-23) dan vazifalar bo'lindi: lampa — Pico da, ovoz — MES tomonida.** Pico dagi PWM (GP16) mantiqi butunlay olib tashlandi, oyoq doim past (`audio = Pin(GP_AUDIO, Pin.OUT, value=0)`) — usilitel kirishi jim qolsin. Tovushni stansiya sahifasi kompyuter dinamigidan chaladi (`onSig`/`tovush`, Web Audio).
+- **Faza qoidasi (asosiy talab).** Pico rele har almashganda `{"ev":"sig","r":"qr|avariya|test|idle","on":1|0,"ms":..}` yuboradi — hodisa `lampa()` ning ichidan, relega yozilgan aynan shu chaqiriqda ketadi. MES ovozni **shu xabar kelganda** boshlaydi, **o'z taymeri bilan emas**: soatlar bir xil yurmagani uchun taymer siljib, chiroq bilan ovoz "oldin-ketin" bo'lib qolardi (1 ms/s xato → 10 daqiqada yarim faza). Qolgan kechikish USB+audio ≈10–20 ms, doimiy. `ms` — zaxira: xabar yo'qolsa ovoz o'zi tinadi.
+- `HQ`/`HA`/`AV` Pico da **faqat saqlanadi va qaytariladi** (`kal.json`, `SET`/`HOLAT`) — o'zi ishlatmaydi. Sozlama bitta joyda (MES da) tursin.
+- `AO=1` — lampa yonmaydi va `sig` ham yuborilmaydi, demak ovoz ham yo'q.
+- **Chrome autoplay:** sahifa ovozi foydalanuvchi bosmaguncha chalinmaydi — kiosk `.bat` da `--autoplay-policy=no-user-gesture-required` bor, zaxira sifatida sahifa birinchi tugmada audioni ochadi.
+- **Natija:** stansiya sahifasi yopiq bo'lsa ovoz umuman yo'q, faqat lampa. Ilgari sirena Pico dan chalinardi va kompyuterga bog'liq emasdi.
+- `QR`: **0.5 s ichida lampa 2 marta miltillaydi**: 125 bor — 125 jim — 125 bor — 125 jim (`QR_MS`), ovoz `HQ` (2500 Hz) shu ritmda.
+- `TEST`: lampa 1 s, ovoz `HQ` 1 s.
+- `AVARIYA`: lampa 1 s yonadi, 1 s o'chadi, `STOP` gacha; ovoz `HA` (1500 Hz) lampa bilan birga. Ilgari yongan paytda 800/1200 Hz almashardi — foydalanuvchi `buzuq, lampaga mos emas` dedi.
 - **Avariyali to'xtash** (v1.12): stanok (RUN va 18 kirishlari ikkalasi) 200 ms dan uzoq o'chsa va shu payt detal D1 da, D2 da yoki ular orasida (navbatda) bo'lsa — `avariya_toxtash` hodisasi + AVARIYA, shu detallar o'lchovi bekor. Bekor detal qayta yongach datchikdan chiqsa ham o'lchov/FAQAT chiqmaydi (navbatga `bekor` belgisi bilan kiradi, D2 da jim tashlanadi). Stanok o'chiq paytda: kutish/yopishib qolish hisoblanmaydi, datchik ochilsa — detal qo'lda olingan (navbatga kirmaydi), yangi to'silish — bekor (avariyasiz). Yo'lda detal yo'q bo'lsa — oddiy to'xtash, avariyasiz. Avariyani Pico o'zi boshlaydi (datchik nosozligi) yoki brauzer (`ALARM`, o'lcham nomuvofiq). `AO=1` bo'lsa avariya boshlanmaydi.
-- `pico/signal_test.py` shularni rele va PWM holatidan o'lchab tekshiradi (2026-09-16 v1.9 da hammasi o'tdi).
-- Rele va PWM holati eslab qolinadi: bir xil qiymat qayta yozilmaydi (5 ms lik siklda PWM chastotasini qayta o'rnatish tovushni g'ijirlatadi).
+- `pico/signal_test.py` shularni rele holati, GP16 pastligi va `sig` hodisalaridan o'lchab tekshiradi.
+- Rele holati eslab qolinadi: bir xil qiymat qayta yozilmaydi (5 ms lik siklda releni keraksiz qo'zg'atmaslik uchun) — `sig` ham shuning uchun aynan bir marta, o'zgarishda ketadi.
 - Uskuna to'xtatilmaydi — faqat indikatsiya. E-Stop bu tizimning vazifasi emas.
 
 ## MES API (sinov serveri beradi, haqiqiy MES ham shu shaklda bo'lishi kerak)
@@ -138,6 +143,18 @@ GP0 dagi bitta rele. Lampa va tovush **doim birga** — `signal(yon)` bitta chaq
 Stansiya har 60 s `settings` ni so'raydi; `updated` o'zgarsa Pico ga `SET`. Hodisalar IndexedDB navbatda, faqat `ack` dan keyin o'chadi.
 
 ## Joriy holat (2026-09-20)
+
+### 2026-09-23: ovoz MES tomoniga o'tkazildi (v1.20) + MES ga ma'lumot bormagani
+
+**Foydalanuvchi talabi:** ovoz berish mantig'i Pico dan olib tashlansin, tovushni MES tizimi chalsin; lampa bilan ovoz **bir vaqtda** yonib-o'chsin, "oldin-ketin" bo'lmasin.
+
+Qilingan ishlar:
+- **Proshivka v1.20** (`sinov_pc.py` 40/40 + tasodifiy **300/300**, 2373 detal): PWM/`tovush()`/`TON_HZ` olib tashlandi, GP16 doim past. `lampa()` ichida `sig` hodisasi — faza qoidasi "Ogohlantirish" bo'limida. Jonli tekshirildi: `ver 1.20`, QR da 4 ta `sig`, TEST da 2 ta, kalibrlash saqlanib qoldi.
+- `stansiya.html`: Web Audio bilan ovoz (`onSig`/`tovush`/`tovushOchir`), aloqa uzilsa ovoz o'chadi.
+- `kiosk_ishga_tushirish.bat`: `--autoplay-policy=no-user-gesture-required`.
+- Hujjatlar: TZ **v2.2** (5-bo'lim to'liq qayta yozildi, 5.1 faza qoidasi, protokolga `sig`), `docs/onlayn_mes_hodisalar.md` 6-bo'limi — MES dasturchisi uchun to'liq spetsifikatsiya. `signal_test.py` va `tovush_test.py` yangilandi.
+
+**MES ga ma'lumot nega bormagan (aniqlandi):** COM6 ni hech kim ushlab turmagan edi — ya'ni **stansiya sahifasi umuman ochilmagan** (Chrome ochiq, lekin kiosk emas). Pico esa ishlab turgan: 77 daqiqada **110 ta o'lchov** (18 m/min, hammasi OK) o'z RAM xotirasiga yig'ilgan. Diagnostika so'rovida Pico ularni chiqarib berdi va xotirasini bo'shatdi — ular `archive/pico_xotira_2026-09-23.py` orqali MES ga qayta yozildi (117 hodisa, vaqti Pico `up` bo'yicha aniq tiklandi: o'qish 2026-09-23 12:42:38 UTC da bo'lgan). Bitta `uskuna` yozuvi o'qishda kesilib qolgan — tiklanmadi. **Xulosa: kiosk `shell:startup` dan ishga tushmagan yoki yopilgan — buni tekshirish kerak.**
 
 ### 2026-09-20: "MES ga ma'lumot bormay qoldi" — sabab va yechim
 
@@ -159,7 +176,8 @@ Qilingan ishlar:
 **Pico da v1.16 yozilgan (2026-09-20 19:47, COM6).** Kalibrlash `kal.json` da saqlanib qoldi: `D=2553.37 B1=-2.19 B2=-5.73 C=0.885 V10=10.151 V18=18.227`. 2026-09-21 ertalab jonli ishladi: o'lchovlar stansiyaga to'g'ridan-to'g'ri kelyapti, tungi 41 ta yozuv Pico xotirasidan olindi (`xotiradan:1`), avariya/tiqilish yo'q.
 
 - Apparat yig'ilgan, Pico o'lchayapti, datchiklar ishlaydi, rele ishlaydi.
-- **Usilitel ishlaydi** — tovush bor, avariya va QR signallari eshitiladi.
+- Usilitel apparat sifatida ishlaydi, lekin **v1.20 dan ishlatilmaydi** — ovoz kompyuter dinamigidan.
+- **v1.20 Pico ga yozilgan (2026-09-23, COM6):** ovoz Pico da yo'q, `sig` hodisasi bor. Kalibrlash saqlanib qoldi.
 - Sinov MES + stansiya + tablo ishlagan. QR skaner sinalgan.
 - **v1.19 Pico ga yozilgan (2026-09-21, `sinov_pc.py` 40/40 + tasodifiy 40/40): kalta detallar tuzatildi** — navbat sig'imi 150 mm bo'yicha (≈21 ta), juftlash chegarasi 3%, tezlik almashgani hisobga olinadi. Yangi sinovlar: S39 (16 ta 150 mm detal ketma-ket), S40 (aralash uzunliklar 650/800/1860/150/1100). Oldingi v1.18 (38/38). v1.17 ning qat'iy navbati + fizik tezlik tekshiruvi (yuqoriga qarang). v1.17: D1 yozuvi D2 tasdiqlamaguncha tashlanmaydi (vaqt bo'yicha umuman tashlanmaydi), navbat boshi o'tkazib yuborilmaydi, ishonchsiz holatlar `tiqilish` bo'lib chiqadi. Oldingi v1.16 (2026-09-20, 35/35): tiqilishda juftlashni uzunlik bo'yicha tekshirish, kutish muddati 5 karra uzun, tiqilganda nominal tezlik bilan hisoblash, `tiqilish` hodisasi. v1.15: jim portga yozmaslik + WDT. v1.14 (2026-09-17): rele mantiqi teskari (`RELE_YOQ=1`) — Low trigger deb yozilgan edi, lampa NO kontaktda ovozga teskari yonardi. v1.13: stansiyasiz xotiraga yig'ish (`HB`), `kal.json`, alohida ohang `HQ/HA`, avariya ovozsiz rejimi `AV`. `pico/sinov_pc.py` 32 ssenariy o'tdi. v1.12 (arxivda): avariyali to'xtash, yangi QR/avariya signallari, sikl `qadam()` funksiyasida (sinov uchun). v1.11 (arxivda): v1.10 + `B1/B2`. v1.10: uzun detal (L > D) navbat muddati tuzatildi. v1.9 (2026-09-16 yozildi, `PING`/`HOLAT`/`SET` va `signal_test.py` o'tdi). v1.9 = v1.8 − TZ dan tashqari narsalar: GP2/GP3 qo'shimcha relelari, LO/AV/RP olib tashlandi, QR va AVARIYA signallari TZ 7-bo'limga qaytarildi. FIFO navbat va AO qoldi.
 - v1.8 boshqa joyda yozilgan, kompyuterda nusxasi yo'q edi — Pico dan o'qib `archive/main_pico_2026-09-16_v1.8.py` ga saqlangan. v1.3 — `archive/main_2026-09-09_v1.3.py`, v1.2 — `archive/main_pico_2026-09-09_v1.2.py`.

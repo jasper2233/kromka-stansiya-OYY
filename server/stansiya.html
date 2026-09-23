@@ -130,7 +130,9 @@ details{margin-top:12px}summary{cursor:pointer;font-size:12px;color:var(--muted)
   </div>
   <div class="btns"><button class="amb" id="saveSet">Saqlash va Pico ga yuborish</button><button id="loadSet">MES dan yuklash</button></div>
   <div class="note">Sozlamalar har 60 soniyada MES dan tekshiriladi — MES da o'zgartirsangiz, stansiya o'zi qabul qilib Pico ga yuboradi.<br>
-  <b>Avariya o'chiq</b> bo'lsa lampa va sirena chalinmaydi, lekin hodisalar MES ga yoziladi.</div>
+  <b>Avariya o'chiq</b> bo'lsa lampa yonmaydi va ovoz chalinmaydi, lekin hodisalar MES ga yoziladi.<br>
+  Proshivka v1.20 dan <b>tovushni shu kompyuter chaladi</b> (Pico faqat lampani boshqaradi): ohang va
+  <b>avariya ovozi</b> sozlamasi shu yerda ishlaydi, lampa bilan bir vaqtda.</div>
 </div></details>
 
 <details id="sinDet"><summary>Signal sinovi</summary><div class="card" style="margin-top:8px">
@@ -295,7 +297,48 @@ async function readLoop(){
 async function yopPort(){
   try{await reader?.cancel();}catch(e){}try{writer?.releaseLock();}catch(e){}try{await port?.close();}catch(e){}
   port=reader=writer=null;
+  tovushOchir();          // aloqa uzilsa ovoz osilib qolmasin
 }
+
+/* ---------- OVOZ (proshivka v1.20 dan) ----------
+   Tovush Pico da emas, SHU YERDA chalinadi (kompyuter dinamigi). Pico faqat
+   lampani boshqaradi va rele har almashganda {"ev":"sig","r":..,"on":..,"ms":..}
+   yuboradi. Ovozni AYNAN shu xabar kelganda boshlaymiz — o'z taymerimiz bilan
+   EMAS: soatlar bir xil yurmagani uchun taymer sekin-asta siljib, chiroq bilan
+   ovoz "oldin-ketin" bo'lib qolardi. Endi fazani Pico beradi, qolgan kechikish
+   USB + audio (≈10–20 ms) — doimiy va sezilmaydi.
+   `ms` — zaxira: xabar yo'qolsa ham ovoz shu muddatda o'zi tinadi. */
+let AC=null,osc=null,gain=null;
+function acOch(){
+  try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();}catch(e){return null;}
+  return AC;}
+function tovushOchir(){
+  if(!osc)return;
+  try{const t=AC.currentTime;gain.gain.cancelScheduledValues(t);
+    gain.gain.setValueAtTime(gain.gain.value,t);
+    gain.gain.linearRampToValueAtTime(0,t+0.005);   // klik bo'lmasin
+    osc.stop(t+0.02);}catch(e){}
+  osc=gain=null;}
+function tovush(hz,ms){
+  const ac=acOch();if(!ac)return;
+  tovushOchir();
+  osc=ac.createOscillator();gain=ac.createGain();
+  osc.type='square';osc.frequency.value=hz;   // kvadrat — eski zummer ohangiga o'xshash
+  const t=ac.currentTime;
+  gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(0.25,t+0.005);
+  osc.connect(gain);gain.connect(ac.destination);osc.start();
+  if(ms>0){const e=t+ms/1000;
+    gain.gain.setValueAtTime(0.25,Math.max(t+0.006,e-0.005));
+    gain.gain.linearRampToValueAtTime(0,e);osc.stop(e+0.02);}}
+function onSig(m){
+  if(!m.on){tovushOchir();return;}
+  if(m.r==='avariya'&&$('sAV').value==='0')return;   // avariya ovozi o'chiq — faqat lampa
+  tovush(m.r==='avariya'?nv($('kHA'),1500):nv($('kHQ'),2500),m.ms||0);}
+// Chrome ovozni faqat foydalanuvchi aralashuvidan keyin chalади. Kioskda .bat
+// --autoplay-policy=no-user-gesture-required beradi; bu — zaxira: skaner bosgan
+// har tugma ham audioni ochadi.
+['keydown','pointerdown'].forEach(e=>addEventListener(e,acOch,{passive:true}));
 
 /* ---------- Pico hodisalari ---------- */
 function handle(line){
@@ -315,6 +358,7 @@ function handle(line){
     case 'ogoh':onOgoh(m);break;
     case 'avariya_toxtash':onToxtash(m);break;
     case 'tiqilish':onTiqilish(m);break;
+    case 'sig':onSig(m);break;
   }
 }
 // Stansiya ulanmagan paytda Pico o'zida yig'gan hodisa: ekranga signal bermaymiz, faqat MES ga

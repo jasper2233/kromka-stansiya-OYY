@@ -42,13 +42,8 @@ class Pin:
             if self.h:
                 self.h(self)
 
-class PWM:
-    def __init__(self, pin): self.pin = pin; self.f = 0; self.d = 0
-    def freq(self, f): self.f = f
-    def duty_u16(self, d): self.d = d
-
 machine = types.ModuleType('machine')
-machine.Pin = Pin; machine.PWM = PWM
+machine.Pin = Pin
 
 class _Poll:
     def register(self, *a): pass
@@ -364,12 +359,13 @@ def S25():
     tekshir('25 oraliqdagi bekor detal ortidan kelgan detal to\'g\'ri juftlanadi', len(o) == 1 and abs(o[0]['L'] - 400) < 2 and not ogohlar(), CHIQ)
 
 def _signal_yoz(ms):
-    """ms davomida har 5 ms: (vaqt, lampa, tovush, chastota)"""
+    """ms davomida har 5 ms: (vaqt, lampa, GP16). v1.20 dan ovoz Pico da yo'q —
+    GP16 doim past turishi ham tekshiriladi."""
     t = []
     for i in range(ms // 5):
         SOAT['us'] += 5000
         M.alarm_tick()
-        t.append((i * 5, M.rele.value() == M.RELE_YOQ, M.buz.d > 0, M.buz.f))
+        t.append((i * 5, M.rele.value() == M.RELE_YOQ, M.audio.value()))
     return t
 
 def _yonishlar(t, idx):
@@ -383,25 +379,25 @@ def _yonishlar(t, idx):
 def S26():
     yangi_holat(); M.signal(False); SOAT['us'] += 1000
     M.qr_boshla(); t = _signal_yoz(800)
-    lam, tov = _yonishlar(t, 1), _yonishlar(t, 2)
-    birga = all(q[1] == q[2] for q in t)
-    tugadi = all(not q[1] and not q[2] for q in t if q[0] >= 505)
-    tekshir('26 QR: 0.5 s da 2 tut-tut, lampa birga', len(lam) == 2 and len(tov) == 2 and birga and tugadi and lam[1] - lam[0] in (245, 250, 255) and all(q[3] == M.KAL['HQ'] for q in t if q[2]), (lam, tov))
+    lam = _yonishlar(t, 1)
+    tugadi = all(not q[1] for q in t if q[0] >= 505)
+    jim = all(q[2] == 0 for q in t)
+    tekshir('26 QR: 0.5 s da lampa 2 marta miltillaydi, GP16 jim', len(lam) == 2 and tugadi and jim and lam[1] - lam[0] in (245, 250, 255), (lam, jim))
 
 def S27():
     yangi_holat(); M.signal(False); SOAT['us'] += 1000
     M.avariya_boshla(); t = _signal_yoz(6000)
     lam = _yonishlar(t, 1)
-    birga = all(q[1] == q[2] for q in t)
-    bir_ohang = len(set(q[3] for q in t if q[2])) == 1
+    jim = all(q[2] == 0 for q in t)
     M.avariya_toxtat()
-    tekshir('27 AVARIYA: 1 s yonadi / 1 s o\'chadi, lampa=tovush, bitta ohang', len(lam) >= 3 and lam[0] <= 5 and all(abs(b - a - 2000) <= 10 for a, b in zip(lam, lam[1:])) and birga and bir_ohang and M.rele.value() != M.RELE_YOQ and M.buz.d == 0, lam)
+    tekshir('27 AVARIYA: lampa 1 s yonadi / 1 s o\'chadi, GP16 jim', len(lam) >= 3 and lam[0] <= 5 and all(abs(b - a - 2000) <= 10 for a, b in zip(lam, lam[1:])) and jim and M.rele.value() != M.RELE_YOQ, lam)
 
 def S28():
     yangi_holat(); M.signal(False); SOAT['us'] += 1000
     M.test_boshla(); t = _signal_yoz(1500)
     on = [q[0] for q in t if q[1]]
-    tekshir('28 TEST: lampa + tovush 1 s', on and on[-1] - on[0] >= 990 and on[-1] < 1005 and all(q[1] == q[2] for q in t), (on[:1], on[-1:]))
+    jim = all(q[2] == 0 for q in t)
+    tekshir('28 TEST: lampa 1 s, GP16 jim', on and on[-1] - on[0] >= 990 and on[-1] < 1005 and jim, (on[:1], on[-1:]))
 
 def S29():
     # Stansiya ulanmagan: o'lchov xotiraga yig'iladi, HB kelganda eski_ms bilan chiqadi
@@ -427,20 +423,42 @@ def S29():
     olch = [j for j in js if j['ev'] == 'olchov']
     tekshir('29 stansiyasiz: o\'lchov xotiraga, HB da eski_ms bilan chiqadi', not jim and n_xot >= 2 and bosh and len(olch) == 1 and abs(olch[0]['L'] - 600) < 2 and olch[0]['eski_ms'] >= 10000 and not M.yigilgan, js)
 
+def _siglar():
+    return [e for e in CHIQ if e['ev'] == 'sig']
+
 def S30():
-    yangi_holat(); M.KAL['HQ'] = 2700.0; M.KAL['HA'] = 1400.0; M.signal(False); SOAT['us'] += 1000
-    M.qr_boshla(); tq = _signal_yoz(600)
-    M.avariya_boshla(); ta = _signal_yoz(1500); M.avariya_toxtat()
-    fq = set(q[3] for q in tq if q[2]); fa = set(q[3] for q in ta if q[2])
-    tekshir('30 skaner va avariya ohangi alohida (HQ/HA)', fq == {2700} and fa == {1400}, (fq, fa))
+    # v1.20: ovoz MES tomonida. Pico har rele almashishida "sig" yuboradi —
+    # MES tovushni shu xabardan boshlaydi, shuning uchun faza siljimaydi.
+    yangi_holat(); M.signal(False); SOAT['us'] += 1000
+
+    CHIQ.clear(); M.qr_boshla(); tq = _signal_yoz(600)
+    sq = _siglar()
+    qr_ok = ([e['on'] for e in sq] == [1, 0, 1, 0]
+             and all(e['r'] == 'qr' for e in sq)
+             and all(e['ms'] == M.QR_MS // 4 for e in sq if e['on'])
+             and len(_yonishlar(tq, 1)) == sum(e['on'] for e in sq))
+
+    CHIQ.clear(); M.avariya_boshla(); ta = _signal_yoz(4200)
+    sa = _siglar()
+    av_ok = ([e['on'] for e in sa] == [1, 0, 1, 0, 1]
+             and all(e['r'] == 'avariya' for e in sa)
+             and all(e['ms'] == M.AVARIYA_MS for e in sa if e['on'])
+             and len(_yonishlar(ta, 1)) == sum(e['on'] for e in sa))
+
+    CHIQ.clear(); M.avariya_toxtat()
+    toxt_ok = [(e['r'], e['on']) for e in _siglar()] == [('idle', 0)]
+    tekshir('30 sig hodisasi: rejim, uzunlik va lampa bilan bir lahzada',
+            qr_ok and av_ok and toxt_ok, (sq, sa, _siglar()))
 
 def S32():
+    # AV/HQ/HA endi Pico da faqat SAQLANADI va qaytariladi — ovozni o'chirish yoki
+    # chalish MES ning ishi. Pico tomonda AV=0 bo'lsa ham lampa va sig o'zgarmaydi.
     yangi_holat(); M.KAL['AV'] = 0.0; M.signal(False); SOAT['us'] += 1000
-    M.avariya_boshla(); ta = _signal_yoz(4200); M.avariya_toxtat()
-    M.qr_boshla(); tq = _signal_yoz(600)
-    lamp_a = len(_yonishlar(ta, 1)); tov_a = len(_yonishlar(ta, 2))
-    lamp_q = len(_yonishlar(tq, 1)); tov_q = len(_yonishlar(tq, 2))
-    tekshir('32 avariya ovozsiz: lampa miltillaydi, ovoz yo\'q; skaner ovozi ishlaydi', lamp_a >= 2 and tov_a == 0 and lamp_q == 2 and tov_q == 2, (lamp_a, tov_a, lamp_q, tov_q))
+    CHIQ.clear(); M.avariya_boshla(); ta = _signal_yoz(4200); M.avariya_toxtat()
+    lamp_a = len(_yonishlar(ta, 1)); sig_on = sum(e['on'] for e in _siglar())
+    jim = all(q[2] == 0 for q in ta)
+    tekshir('32 AV=0 Pico mantiqiga ta\'sir qilmaydi: lampa va sig o\'z ishida, GP16 jim',
+            lamp_a >= 2 and sig_on == lamp_a and jim and M.KAL['AV'] == 0.0, (lamp_a, sig_on, jim))
 
 def S31():
     # SET kelsa kal.json ga yoziladi, qayta yonganda o'qiladi

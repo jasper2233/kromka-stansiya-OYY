@@ -39,13 +39,13 @@ pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px s
   <div class="k">Texnik topshiriq</div>
   <h1>Kromka stansiyasi — o'lchov va MES ga uzatish</h1>
   <p>Detal uzunligini ikki fotoelektrik datchik bilan o'lchash, tiqilish va nosozliklarni aniqlash, natijani MES ga uzatish, ovoz va yorug'lik bilan ogohlantirish</p>
-  <div class="meta"><span>Versiya 2.1</span><span>21 sentyabr 2026</span><span>Proshivka v1.19</span><span>Kontroller: Raspberry Pi Pico</span></div>
+  <div class="meta"><span>Versiya 2.2</span><span>23 sentyabr 2026</span><span>Proshivka v1.20</span><span>Kontroller: Raspberry Pi Pico</span></div>
 </div>
 
 <p>Bu hujjat v1.2 (6 sentyabr) TZ sining o'rnini bosadi. v1.2 da apparat ulanishi to'g'ri yozilgan, lekin o'lchash mantiqi, signallar va MES bilan aloqa shundan keyin sezilarli o'zgardi. Eski hujjat <code>docs/TZ_kromka_kontroller.html</code> da tarix sifatida qoladi.</p>
 
 <h2><span>1</span> Maqsad va qamrov</h2>
-<p>Kontroller kromka yopishtirish stanogidan o'tayotgan har bir detalning uzunligini ikkita mustaqil to'siq datchigi bilan o'lchaydi, stanok holati va tezligini kuzatadi, natijani brauzer orqali MES ga uzatadi va nosozlikda operatorni sirena hamda lampa bilan ogohlantiradi.</p>
+<p>Kontroller kromka yopishtirish stanogidan o'tayotgan har bir detalning uzunligini ikkita mustaqil to'siq datchigi bilan o'lchaydi, stanok holati va tezligini kuzatadi, natijani brauzer orqali MES ga uzatadi va nosozlikda operatorni lampa hamda ovoz bilan ogohlantiradi (v1.20 dan lampa — Pico da, ovoz — MES tomonida, 5-bo'lim).</p>
 <p><b>Qamrovga kirmaydi:</b> stanokni to'xtatish yoki boshqarish. Tizim faqat o'lchaydi va xabar beradi. E-Stop va blokirovka — stanokning o'z tizimi.</p>
 
 <h3>Ishonchlilik talabi</h3>
@@ -59,13 +59,13 @@ pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px s
 <h2><span>2</span> Tizim tarkibi</h2>
 <pre>[Datchik D1] → PC817 → GP1 ┐
 [Datchik D2] → PC817 → GP5 ├→ [Pico, MicroPython] ←USB→ [Chrome kiosk, stansiya.html] ←HTTPS→ [MES]
-[RUN 24 V]   → PC817 → GP9 │        ↓ GP0 rele → lampa
-[18 m/min]   → PC817 → GP13┘        ↓ GP16 PWM → XH-M564 → dinamik</pre>
+[RUN 24 V]   → PC817 → GP9 │        ↓ GP0 rele → lampa        ↓ ovoz: kompyuter dinamigi
+[18 m/min]   → PC817 → GP13┘        (GP16 → XH-M564 usilitel: v1.20 dan ishlatilmaydi)</pre>
 
 <table>
 <tr><th>Qism</th><th>Vazifasi</th></tr>
-<tr><td class="m">Pico (main.py)</td><td>Vaqtni mikrosekundda o'lchaydi, uzunlikni hisoblaydi, detallarni juftlaydi, signal beradi, JSON yuboradi. Mantiq shu yerda.</td></tr>
-<tr><td class="m">stansiya.html</td><td>Brauzerdagi shlyuz: WebSerial orqali Pico bilan, HTTPS orqali MES bilan gaplashadi. QR skaner klaviatura sifatida keladi. Kalibrlash hisobi shu yerda.</td></tr>
+<tr><td class="m">Pico (main.py)</td><td>Vaqtni mikrosekundda o'lchaydi, uzunlikni hisoblaydi, detallarni juftlaydi, <b>lampani</b> boshqaradi, JSON yuboradi. Mantiq shu yerda.</td></tr>
+<tr><td class="m">stansiya.html</td><td>Brauzerdagi shlyuz: WebSerial orqali Pico bilan, HTTPS orqali MES bilan gaplashadi. QR skaner klaviatura sifatida keladi. Kalibrlash hisobi va <b>v1.20 dan ogohlantirish tovushi</b> shu yerda.</td></tr>
 <tr><td class="m">MES</td><td>Detallar ro'yxati, sozlamalar, hodisalar jurnali. Sinov uchun <code>server/mes_server.py</code>; ishlab chiqarishda <code>mes.mebelix.uz</code>.</td></tr>
 </table>
 
@@ -78,7 +78,7 @@ pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px s
 <tr><td class="m">GP9</td><td class="m">12</td><td>RUN — stanok ishlayapti (10 m/min)</td><td>past = ishlayapti</td></tr>
 <tr><td class="m">GP13</td><td class="m">17</td><td>18 m/min rejimi (HMI → chastotnik liniyasi)</td><td>past = 18 m/min</td></tr>
 <tr><td class="m">GP0</td><td class="m">1</td><td>Rele moduli IN — lampa (NO kontakt). Yagona rele</td><td><b>yuqori = tortadi</b> (<code>RELE_YOQ=1</code>)</td></tr>
-<tr><td class="m">GP16</td><td class="m">21</td><td>PWM → R2 10k → A → R3 3.3k → GND; A → C1 10µF → usilitel NL</td><td>2500 / 1500 Hz</td></tr>
+<tr><td class="m">GP16</td><td class="m">21</td><td>R2 10k → A → R3 3.3k → GND; A → C1 10µF → usilitel NL. <b>v1.20 dan ishlatilmaydi</b> — ovoz MES tomonida. Montaj joyida qoldi, kerak bo'lsa qaytarish uchun</td><td>doim past (jim)</td></tr>
 </table>
 
 <h3>Quvvat va ajratish</h3>
@@ -139,15 +139,21 @@ L2     = v·(t2 − K2) − B2
 </table>
 
 <h2><span>5</span> Ogohlantirish signallari</h2>
-<p>GP0 dagi bitta rele. <b>Lampa va tovush doim birga</b> yonadi va o'chadi.</p>
+<p><b>Proshivka v1.20 dan (2026-09-23) vazifalar bo'lindi:</b> <b>lampani Pico</b> boshqaradi (GP0 dagi bitta rele), <b>tovushni MES tomoni</b> — stansiya sahifasi kompyuter dinamigidan chaladi. Pico dagi PWM (GP16) mantiqi butunlay olib tashlandi; oyoq doim past ushlanadi, usilitel kirishi jim qoladi.</p>
 <table>
-<tr><th>Rejim</th><th>Ko'rinishi</th><th>Tugashi</th></tr>
-<tr><td class="m">QR</td><td>0.5 s ichida ikki "tut-tut": 125 ms bor — 125 jim — 125 bor — 125 jim. Ohang <code>HQ</code> (standart 2500 Hz)</td><td>O'zi</td></tr>
-<tr><td class="m">TEST</td><td>Lampa + tovush 1 s</td><td>O'zi</td></tr>
-<tr><td class="m">AVARIYA</td><td>1 s ikkalasi yonadi, 1 s ikkalasi o'chadi. Ohang <code>HA</code> (standart 1500 Hz), bir tekis</td><td><code>STOP</code> buyrug'i</td></tr>
+<tr><th>Rejim</th><th>Lampa (Pico)</th><th>Tovush (MES tomoni)</th><th>Tugashi</th></tr>
+<tr><td class="m">QR</td><td>0.5 s ichida ikki marta miltillaydi: 125 ms bor — 125 jim — 125 bor — 125 jim</td><td>Har yonishda ohang <code>HQ</code> (standart 2500 Hz), 125 ms</td><td>O'zi</td></tr>
+<tr><td class="m">TEST</td><td>Lampa 1 s</td><td>Ohang <code>HQ</code>, 1 s</td><td>O'zi</td></tr>
+<tr><td class="m">AVARIYA</td><td>1 s yonadi, 1 s o'chadi</td><td>Lampa yongan har 1 s da ohang <code>HA</code> (standart 1500 Hz), bir tekis</td><td><code>STOP</code> buyrug'i</td></tr>
 </table>
+
+<h3>5.1 Lampa va ovoz bir vaqtda: faza qoidasi</h3>
+<p>Lampa Pico da, ovoz kompyuterda bo'lgani uchun ular <b>bir vaqtda</b> yonib-o'chishi alohida ta'minlanadi. Pico rele holatini har almashtirganda o'sha lahzada <code>sig</code> xabarini yuboradi:</p>
+<pre>{"ev":"sig","r":"qr|avariya|test|idle","on":1|0,"ms":125|1000}</pre>
+<p><b>Talab:</b> MES tomoni ovozni <b>aynan shu xabar kelganda</b> boshlaydi va <code>on:0</code> da to'xtatadi — <b>o'z taymeri bilan chalmaydi</b>. Sabab: kompyuter va Pico soatlari bir xil yurmaydi, 1 soniyada 1 ms xato ham 10 daqiqada yarim faza beradi — chiroq yonganda ovoz jim, o'chganda ovoz chalinadigan holat ("oldin-ketin") kelib chiqadi. <code>sig</code> bo'yicha chalinganda qolgan kechikish faqat USB va audio — ≈10–20 ms, u doimiy va sezilmaydi. <code>ms</code> — zaxira: xabar yo'qolsa ham ovoz shu muddatdan keyin o'zi tinadi.</p>
 <p>Avariya sabablari: Pico tomonidan — <code>FARQ</code>, <code>FAQAT1/2</code>, <code>tiqilish</code>, datchik nosozliklari, avariyali to'xtash; brauzer tomonidan — o'lcham dopuskdan chiqqanda (<code>ALARM</code>).</p>
-<p><code>AO=1</code> — avariya umuman boshlanmaydi (sozlash paytida). <code>AV=0</code> — avariyada faqat lampa miltillaydi, ovoz chalinmaydi; skaner ovoziga ta'sir qilmaydi.</p>
+<p><code>AO=1</code> — avariya umuman boshlanmaydi (sozlash paytida): lampa ham yonmaydi, <code>sig</code> ham yuborilmaydi, demak ovoz ham bo'lmaydi. <code>AV=0</code> — avariyada faqat lampa miltillaydi, ovoz chalinmaydi; skaner ovoziga ta'sir qilmaydi. <code>HQ</code>, <code>HA</code>, <code>AV</code> ni Pico hamon qabul qiladi, <code>kal.json</code> ga saqlaydi va qaytaradi, lekin <b>o'zi ishlatmaydi</b> — sozlama bitta joyda (MES da) turishi uchun.</p>
+<p><b>Natija, hisobga olinishi kerak:</b> stansiya sahifasi yopiq bo'lsa yoki kompyuter o'chiq bo'lsa <b>ovoz bo'lmaydi, faqat lampa miltillaydi</b>. Shuning uchun kiosk <code>shell:startup</code> da turishi, kompyuter uyqusi o'chirilgani va Chrome <code>--autoplay-policy=no-user-gesture-required</code> bilan ochilishi shart (Chrome aks holda foydalanuvchi biror joyni bosmaguncha ovoz bermaydi).</p>
 
 <h2><span>6</span> Stansiya (brauzer) talablari</h2>
 <ul>
@@ -172,6 +178,7 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 {"ev":"avariya_toxtash","d1":1,"d2":0,"oraliq":2,"birga":0}
 {"ev":"ogoh","ch":2,"sabab":"javob_yoq|yopishib_qolgan|iflos|tezlik_nomuvofiq","q":0}
 {"ev":"uskuna","holat":1}   {"ev":"tezlik","v":18}   {"ev":"holat","alarm":1}
+{"ev":"sig","r":"qr|avariya|test|idle","on":1|0,"ms":125|1000}   ← lampa almashdi: ovozni MES tomoni shu lahzada chaladi (5.1)
 {"ev":"yigilgan","n":12,"yoqolgan":0}   ← xotiradagi yozuvlar chiqishidan oldin
 {"ev":"pong","up":ms}   {"ev":"kal",...}   {"ev":"boot",...}</pre>
 <p>Stansiya jim bo'lsa Pico USB ga umuman yozmaydi (o'qilmayotgan portga yozish kontrollerni qotirishi mumkin): <code>olchov</code>, <code>ogoh</code>, <code>tiqilish</code>, <code>avariya_toxtash</code>, <code>uskuna</code> xotiraga yig'iladi (300 tagacha), qolgani tashlanadi. Stansiya qayta gapirganda har yozuv <code>"eski_ms"</code> (necha ms oldin bo'lgani) bilan chiqadi.</p>
@@ -249,6 +256,7 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 <h2><span>12</span> Versiyalar</h2>
 <table>
 <tr><th class="m">Versiya</th><th>O'zgarish</th></tr>
+<tr><td class="m">v1.20</td><td><b>Ovoz Pico dan olib tashlandi</b> (GP16 PWM yo'q, oyoq doim past) — tovushni MES tomoni chaladi. Lampa almashganda <code>sig</code> hodisasi: ovoz bilan chiroq fazasi siljimaydi (5.1). <code>HQ/HA/AV</code> Pico da faqat saqlanadi</td></tr>
 <tr><td class="m">v1.19</td><td>Navbat sig'imi eng kichik detal (150 mm) bo'yicha hisoblanadi; juftlash chegarasi 25% → 3%; tezlik almashgan detallar solishtirilmaydi</td></tr>
 <tr><td class="m">v1.18</td><td>Fizik tezlik tekshiruvi — qayta yuklashdan keyin navbat siljimaydi</td></tr>
 <tr><td class="m">v1.17</td><td>Qat'iy navbat: D1 yozuvi D2 tasdiqlamaguncha yo'qolmaydi, vaqt bo'yicha tashlanmaydi</td></tr>
@@ -264,7 +272,7 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 
 <h2><span>13</span> Ochiq ishlar</h2>
 <ul>
-  <li><b>MES dasturchilariga:</b> <code>tiqilish</code> hodisasini qabul qilish va ko'rsatish; skan ↔ o'lchov juftlashni <code>kirish_ts</code> bo'yicha qayta yozish (8.3-bo'lim).</li>
+  <li><b>MES dasturchilariga:</b> <code>tiqilish</code> hodisasini qabul qilish va ko'rsatish; skan ↔ o'lchov juftlashni <code>kirish_ts</code> bo'yicha qayta yozish (8.3-bo'lim); <b>ogohlantirish tovushini o'z tomonida chalish</b> — <code>sig</code> hodisasi bo'yicha, faza qoidasiga rioya qilib (5.1-bo'lim va <code>docs/onlayn_mes_hodisalar.md</code> 6-bo'limi).</li>
   <li>Ishlab chiqarish stansiyasi sahifasini yangi <code>stansiya.html</code> ga o'tkazish (<code>kirish_ts</code> va tiqilish ko'rsatish shu yerda).</li>
   <li>Etalonlarni shtangensirkul bilan o'lchab aniq <code>L_ref</code> kiritish va kalibrlashni qayta hisoblash.</li>
   <li>Ish rejimida <code>AO=0</code> bo'lishi kerak (avariya signali yoqiq).</li>

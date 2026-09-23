@@ -43,7 +43,11 @@ rem Chrome yorliqni fonda sekinlatmasin: kiosk oynasi ustini boshqa oyna yopsa
 rem yoki ekran o'chsa, Chrome taymerlarni daqiqada bir martaga tushiradi va
 rem hatto yorliqni muzlatadi. Shunda stansiya Pico ga "HB" yubormay qoladi,
 rem MES ga ham ma'lumot bormaydi. Quyidagi bayroqlar buni to'xtatadi.
-set "BAYROQ=--kiosk --no-first-run --no-default-browser-check --noerrdialogs --disable-session-crashed-bubble --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=IntensiveWakeUpThrottling,CalculateNativeWinOcclusion,HighEfficiencyModeAvailable"
+rem --autoplay-policy=no-user-gesture-required: proshivka v1.20 dan tovushni shu
+rem kompyuter chaladi. Chrome esa sahifa ovozini faqat foydalanuvchi biror joyni
+rem bosgandan keyin beradi - kioskda hech kim bosmasligi mumkin, avariya esa
+rem jim qolardi. Shu bayroq bilan ovoz darhol ishlaydi.
+set "BAYROQ=--kiosk --no-first-run --no-default-browser-check --noerrdialogs --disable-session-crashed-bubble --autoplay-policy=no-user-gesture-required --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=IntensiveWakeUpThrottling,CalculateNativeWinOcclusion,HighEfficiencyModeAvailable"
 start "" %CHROME% --user-data-dir="%PROFIL%" %BAYROQ% "%URL%"
 
 exit /b 0

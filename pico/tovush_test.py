@@ -1,5 +1,10 @@
 # tovush_test.py — TOVUSH ZANJIRINI BOSQICHMA-BOSQICH TEKSHIRISH
 #
+# ESLATMA (2026-09-23, proshivka v1.20): main.py endi GP16 dan OVOZ CHIQARMAYDI —
+# tovush MES tomonida (kompyuter dinamigi) chalinadi. Bu dastur apparat zanjiri
+# kerak bo'lib qolsa (ovozni Pico ga qaytarish, montajni tekshirish) turadi.
+# Ishga tushirilsa GP16 ni o'zi boshqaradi — keyin Pico ni qayta yuklang.
+#
 # Muammo: usilitel tovush bermayapti. Bu dastur GP16 ni ma'lum holatlarga
 # qo'yadi va ushlab turadi — siz shu vaqtda multimetr bilan o'lchaysiz.
 # Hech narsa hisoblamaydi, faqat sinov signali beradi.

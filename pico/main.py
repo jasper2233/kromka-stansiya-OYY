@@ -1,4 +1,14 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.19)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.20)
+#
+# OVOZ — v1.20 dan Pico da YO'Q (2026-09-23 foydalanuvchi talabi). Tovush mantiqi
+# butunlay MES/stansiya tomoniga o'tdi: kompyuter dinamigidan chalinadi. Pico faqat
+# LAMPA ni boshqaradi (GP0 rele). GP16 dagi PWM olib tashlandi, oyoq past ushlanadi —
+# usilitel kirishi jim qolsin (ochiq qolsa shovqin tutishi mumkin).
+#
+# LAMPA VA OVOZ BIR VAQTDA: Pico rele holatini har almashtirganda "sig" hodisasini
+# yuboradi ({"ev":"sig","r":"avariya|qr|test|idle","on":1|0,"ms":..}). MES tovushni
+# o'z taymeri bilan emas, AYNAN shu xabar kelganda boshlaydi va "on":0 da to'xtatadi.
+# Shunda ovoz va chiroq fazasi hech qachon siljimaydi.
 #
 # OYOQCHALAR — TZ 3-bo'lim, boshqa pin ishlatilmaydi:
 #   GP1  (2-pin)   <- datchik 1 optopara 4-oyoq   (kirish)
@@ -7,14 +17,14 @@
 #   GP13 (17-pin)  <- 18 m/min optopara 4-oyoq
 #   GP0  (1-pin)   -> rele moduli IN               (lampa, NO kontakt) — YAGONA rele
 #                     Modul amalda YUQORI signalda tortadi (2026-09-17 aniqlandi) — RELE_YOQ
-#   GP16 (21-pin)  -> R2 10k -> A nuqta -> C1 -> usilitel NL
+#   GP16 (21-pin)  -> (ILGARI usilitel) v1.20 dan ISHLATILMAYDI, doim past
 #   GND            <- barcha optoparalar 3-oyoq, rele DC-, usilitel GND, AL-2402 0V
 #
 # BUYRUQLAR (brauzerdan, har biri \n bilan tugaydi):
-#   QR                          0.5 s da 2 ta tut-tut, lampa birga (125 bor/125 jim x2)
-#   ALARM                       avariya rejimi: lampa + tovush birga 1 s yonadi / 1 s o'chadi
+#   QR                          0.5 s da lampa 2 marta miltillaydi (125 bor/125 jim x2)
+#   ALARM                       avariya rejimi: lampa 1 s yonadi / 1 s o'chadi
 #   STOP                        avariyani to'xtatish
-#   TEST                        lampa + sirena 1 s
+#   TEST                        lampa 1 s
 #   KALIB 1  /  KALIB 0         kalibrlash rejimi
 #   SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=0|1
 #   HB                          stansiya yurak urishi (har 1 s), javob yo'q
@@ -23,7 +33,7 @@
 #
 # CHIQISH: har qator JSON. Thonny da o'qish uchun CHOP = True.
 
-from machine import Pin, PWM
+from machine import Pin
 import time, sys, select, json
 
 # ================= OYOQCHALAR =================
@@ -50,14 +60,14 @@ CHOP        = True     # Thonny uchun o'qiladigan matn
 #   C      markazlar orasidagi o'tish vaqtiga tuzatma, ms:  dt_mid = D/v + C
 #   V10/V18  zaxira tezlik — faqat dt o'lchanmaganda ishlatiladi
 #   TD     datchiklar farqi chegarasi, mm
-#   AO     avariya signali O'CHIRILGAN (1 = lampa/sirena chalinmaydi)
+#   AO     avariya signali O'CHIRILGAN (1 = lampa yonmaydi)
 #          Hodisalar baribir yuboriladi va MES ga yoziladi — faqat
-#          ko'rinadigan/eshitiladigan ogohlantirish bosiladi. Sozlash va
-#          o'lchov sinovi paytida shovqin qilmasligi uchun.
-#   HQ     QR (skaner) signali ohangi, Hz
-#   HA     avariya signali ohangi, Hz — QR dan farq qilsin, operator eshitib bilsin
-#   AV     avariya OVOZI: 1 yoqiq, 0 o'chiq (ovozsiz rejim). Lampa baribir
-#          miltillaydi. Skaner (QR) ovoziga TA'SIR QILMAYDI.
+#          ko'rinadigan ogohlantirish bosiladi. Sozlash va
+#          o'lchov sinovi paytida bezovta qilmasligi uchun.
+#   HQ/HA/AV — OVOZ sozlamalari. v1.20 dan Pico ularni FAQAT saqlaydi va
+#          qaytaradi (SET/HOLAT/kal.json), o'zi ovoz chiqarmaydi: tovush MES
+#          tomonida chalinadi, bu qiymatlar esa shu yerda markazlashib turadi
+#          (HQ — skaner ohangi Hz, HA — avariya ohangi Hz, AV — avariya ovozi 0/1).
 KAL = {'D': 2555.0, 'V10': 10.0, 'V18': 18.0,
        'K1': 0.0, 'K2': 0.0, 'B1': 0.0, 'B2': 0.0, 'C': 0.0, 'TD': 12.0, 'AO': 0.0,
        'HQ': 2500.0, 'HA': 1500.0, 'AV': 1.0}
@@ -97,46 +107,46 @@ p_v18 = Pin(GP_V18, Pin.IN, Pin.PULL_UP)
 # Modul sakratkichi Low ga qo'yilsa — shu yerni 0 qiling.
 RELE_YOQ = 1
 rele  = Pin(GP_RELE, Pin.OUT, value=1 - RELE_YOQ)   # boshlanishda lampa o'chiq
-buz   = PWM(Pin(GP_AUDIO))
-buz.duty_u16(0)
+# GP16 — ilgari PWM bilan usilitelga tovush berardi. v1.20 dan ovoz MES tomonida,
+# bu oyoq doim PAST: usilitel kirishi (R2-R3 bo'luvchi orqali) 0 V da jim turadi.
+# Oyoqni ochiq qoldirib bo'lmaydi — havodagi shovqinni tutib g'uvillashi mumkin.
+audio = Pin(GP_AUDIO, Pin.OUT, value=0)
 try:
     led = Pin("LED", Pin.OUT)
 except (TypeError, ValueError):
     led = Pin(25, Pin.OUT)
 
-# TOVUSH: har signalning o'z ohangi — KAL['HQ'] (skaner) va KAL['HA'] (avariya).
-# 2–3 kHz — quloq eng sezgir va kichik dinamik eng baland chiqaradigan oraliq.
-# Stansiyadagi "Signal sinovi" dan eshitib tanlanadi va SET bilan keladi.
-TON_HZ = int(KAL['HQ'])
-buz.freq(TON_HZ)
-
-# Oxirgi holat eslab qolinadi: har 5 ms da PWM ni qayta yozish tovushni
-# g'ijirlatadi, releni esa keraksiz qo'zg'atadi. Chastota ham faqat o'zgarganda
-# yoziladi — freq() har chaqirilganda PWM qayta boshlanadi va chirsillaydi.
-_oxir = {'lampa': None, 'hz': None, 'f': TON_HZ}
+# Oxirgi holat eslab qolinadi: 5 ms lik siklda releni bir xil qiymat bilan
+# keraksiz qo'zg'atmaslik uchun — faqat o'zgarganda yoziladi.
+_oxir = {'lampa': None}
 
 def lampa(on):
+    """Releni almashtiradi VA shu lahzada 'sig' hodisasini yuboradi.
+
+    Ovoz v1.20 dan MES tomonida chalinadi. Agar MES tovushni o'z taymeri bilan
+    chalsa, uning sikli Pico ning lampa sikli bilan siljib ketadi (soatlar bir xil
+    yurmaydi: 1 s da 1 ms xato ham 10 daqiqada yarim faza beradi) — ovoz bilan
+    chiroq "oldin-ketin" bo'lib qoladi. Shuning uchun FAZANI PICO BERADI: tovush
+    relega yozilgan aynan shu lahzada yuborilgan xabardan boshlanadi. Qolgan
+    kechikish — USB va audio (≈10–20 ms), u DOIMIY va ko'z/quloq uchun sezilmaydi.
+    """
     on = True if on else False
     if _oxir['lampa'] is not on:
         _oxir['lampa'] = on
         rele.value(RELE_YOQ if on else 1 - RELE_YOQ)
+        sig_yubor(on)
 
-def tovush(hz):
-    hz = int(hz) if hz else 0
-    if _oxir['hz'] == hz:
-        return
-    _oxir['hz'] = hz
-    if hz:
-        if _oxir['f'] != hz:
-            _oxir['f'] = hz
-            buz.freq(hz)
-        buz.duty_u16(32768)
-    else:
-        buz.duty_u16(0)
+# Har rejimda bitta bosqich qancha davom etadi (MES tovush uzunligini shundan oladi).
+# AL, QR_MS, AVARIYA_MS pastda — chaqirilganda aniqlanadi, import paytida emas.
+def sig_yubor(on):
+    r = AL['rejim']
+    ms = 0
+    if on:
+        ms = QR_MS // 4 if r == 'QR' else (AVARIYA_MS if r == 'AVARIYA' else 1000)
+    yubor({'ev': 'sig', 'r': r.lower(), 'on': 1 if on else 0, 'ms': ms})
 
-def signal(yon, hz=None):
-    """Lampa va tovush — DOIM birga, bitta chaqiriqda."""
-    tovush((hz or KAL['HQ']) if yon else 0)
+def signal(yon):
+    """Ogohlantirish chiqishi. v1.20 dan bu faqat LAMPA (tovush MES tomonida)."""
     lampa(yon)
 
 # ================= STANSIYA ULANMAGANDA — XOTIRAGA YIG'ISH =================
@@ -315,19 +325,19 @@ def d2_kutish_ms(S=None):
 
 # ================= OGOHLANTIRISH REJIMLARI =================
 AL = {'rejim': 'IDLE', 't0': 0}
-QR_MS      = 500      # QR: shu vaqt ichida 2 ta tut-tut + 2 ta lampa miltillashi
+QR_MS      = 500      # QR: shu vaqt ichida lampa 2 marta miltillaydi
 AVARIYA_MS = 1000     # avariya: shuncha yonadi, shuncha o'chadi
 
 def avariya_boshla():
-    # AO=1 bo'lsa lampa va sirena chalinmaydi. Hodisa (ogoh/olchov) baribir
-    # yuboriladi — sozlash paytida muammoni ko'rish uchun, lekin shovqinsiz.
+    # AO=1 bo'lsa lampa yonmaydi. Hodisa (ogoh/olchov) baribir yuboriladi —
+    # sozlash paytida muammoni ko'rish uchun, lekin bezovta qilmasdan.
     if KAL['AO']:
         return
     if AL['rejim'] != 'AVARIYA':
         AL['rejim'] = 'AVARIYA'
         AL['t0'] = time.ticks_ms()
         yubor({'ev': 'holat', 'alarm': 1})
-        chop("  !! AVARIYA — STOP buyrug'igacha davom etadi")
+        chop("  !! AVARIYA (lampa) — STOP buyrug'igacha davom etadi")
 
 def avariya_toxtat():
     AL['rejim'] = 'IDLE'
@@ -351,9 +361,9 @@ def alarm_tick():
         return
     e = time.ticks_diff(time.ticks_ms(), AL['t0'])
     if r == 'QR':
-        # QR o'qildi: 0.5 s ichida IKKI "tut-tut", lampa ular bilan birga
-        # ikki marta yonib-o'chadi: 125 bor / 125 jim / 125 bor / 125 jim.
-        # (2026-09-17 foydalanuvchi talabi; ilgari 150/150/150 edi)
+        # QR o'qildi: 0.5 s ichida lampa ikki marta yonib-o'chadi:
+        # 125 bor / 125 jim / 125 bor / 125 jim. Ritm o'zgarmadi — operator
+        # ko'z bilan tanigan miltillash shu qoldi, faqat tovush MES ga o'tdi.
         if e < QR_MS:
             signal((e * 4 // QR_MS) % 2 == 0)
         else:
@@ -364,13 +374,9 @@ def alarm_tick():
         else:
             AL['rejim'] = 'IDLE'; signal(False)
     elif r == 'AVARIYA':
-        # Lampa va tovush qat'iy BIRGA: 1 s ikkalasi yonadi (bir tekis ohang),
-        # 1 s ikkalasi o'chadi — STOP gacha. Ohang almashmaydi: ilgari yongan
-        # paytda 800/1200 Hz almashardi, bu chirsillardi va lampa ritmiga mos
-        # kelmasdi.
-        yon = (e // AVARIYA_MS) % 2 == 0
-        tovush(KAL['HA'] if (yon and KAL['AV']) else 0)   # ovozsiz rejimda faqat lampa
-        lampa(yon)
+        # Lampa 1 s yonadi, 1 s o'chadi — STOP gacha. Tovush v1.20 dan MES
+        # tomonida: `holat alarm:1` hodisasini olgan stansiya o'zi chaladi.
+        lampa((e // AVARIYA_MS) % 2 == 0)
 
 def ogoh(ch, sabab, q=0.0):
     yubor({'ev': 'ogoh', 'ch': ch, 'sabab': sabab, 'q': round(q, 2)})
@@ -385,7 +391,7 @@ def ogoh(ch, sabab, q=0.0):
 #   2) uzun detal D1 va D2 ikkalasida turibdi
 #   3) detal D1 dan o'tgan, D2 da turibdi
 #   4) detal D1 dan o'tgan, D2 ga yetmagan (oraliqda)
-# Har holatda: AVARIYA (lampa+sirena, STOP gacha), hodisa "avariya_toxtash",
+# Har holatda: AVARIYA (lampa, STOP gacha), hodisa "avariya_toxtash",
 # shu detallarning o'lchovi bekor. Bekor detal stanok qayta yongach datchikdan
 # chiqib ketsa ham — o'lchov chiqmaydi, FAQAT1/FAQAT2 ham chiqmaydi.
 # Stanok o'chiq paytda boshlangan to'silish ham bekor (lekin avariyasiz —
@@ -799,7 +805,8 @@ def buyruq_tekshir():
         yubor(d)
         chop("  kalibrlash saqlandi: D=%.2f V10=%.3f V18=%.3f K1=%.3f K2=%.3f B1=%.2f B2=%.2f C=%.3f TD=%.1f"
              % (KAL['D'], KAL['V10'], KAL['V18'], KAL['K1'], KAL['K2'], KAL['B1'], KAL['B2'], KAL['C'], KAL['TD']))
-        chop("  avariya signali: %s, ovozi: %s, ohang QR %d Hz / avariya %d Hz" % ("O'CHIQ" if KAL['AO'] else 'yoniq', 'yoniq' if KAL['AV'] else "O'CHIQ", KAL['HQ'], KAL['HA']))
+        chop("  avariya lampasi: %s; ovoz sozlamalari MES uchun uzatildi (HQ=%d HA=%d AV=%d)"
+             % ("O'CHIQ" if KAL['AO'] else 'yoniq', KAL['HQ'], KAL['HA'], KAL['AV']))
     elif cmd == 'PING':
         yubor({'ev': 'pong', 'up': time.ticks_ms()})
     elif cmd == 'HOLAT':
@@ -807,15 +814,15 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.19'})
+                  'ver': '1.20'})
         yubor(d)
 
 # ================= BOSHLANISH =================
 yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.19")
-    print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  AUDIO=GP%d"
+    print("  KROMKA STANSIYASI KONTROLLERI  v1.20  (ovoz MES tomonida)")
+    print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  (GP%d ishlatilmaydi)"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")
     print("=" * 50)
