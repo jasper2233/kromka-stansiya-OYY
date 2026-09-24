@@ -1,4 +1,14 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.20)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.21)
+#
+# v1.21 (2026-09-24): QAYTA YUKLANISH SABABI. Pico ishlab turib o'zi qayta yuklanardi
+# (qorovul — WDT), lekin buni hech qayerda ko'rib bo'lmasdi. Endi yonganda
+# machine.reset_cause() o'qiladi va "boot" hodisasida "sabab" bilan chiqadi:
+#   tok — tok berildi (kabel ulandi, ta'minot pasayib qayta tiklandi — brownout ham shu)
+#   wdt — qorovul: asosiy sikl 8 s dan ko'p qotib qoldi. DIQQAT: rp2 da machine.reset()
+#         va "mpremote reset" ham shu kodni beradi.
+# Yonish paytida stansiya hali gapirmagan bo'ladi — shuning uchun "boot" xotiraga
+# yig'iladi va stansiya ulanganda "eski_ms" bilan MES ga yetadi.
+# HOLAT javobida ham "sabab" va "up" (ms, yonganidan beri).
 #
 # OVOZ — v1.20 dan Pico da YO'Q (2026-09-23 foydalanuvchi talabi). Tovush mantiqi
 # butunlay MES/stansiya tomoniga o'tdi: kompyuter dinamigidan chalinadi. Pico faqat
@@ -35,6 +45,8 @@
 
 from machine import Pin
 import time, sys, select, json
+
+VER = '1.21'
 
 # ================= OYOQCHALAR =================
 GP_D1, GP_D2      = 1, 5
@@ -158,7 +170,7 @@ def signal(yon):
 # Xotira — RAM: Pico ga tok kelib turguncha saqlanadi.
 XOST_MS    = 3000
 XOTIRA_MAX = 300
-YIGILADI   = ('olchov', 'ogoh', 'avariya_toxtash', 'tiqilish', 'uskuna')
+YIGILADI   = ('olchov', 'ogoh', 'avariya_toxtash', 'tiqilish', 'uskuna', 'boot')
 XOST       = {'oxir': None, 'yoqolgan': 0}
 yigilgan   = []            # (ticks_ms, json matn)
 
@@ -814,14 +826,27 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': '1.20'})
+                  'ver': VER, 'sabab': YON_SABAB, 'up': time.ticks_ms()})
         yubor(d)
 
 # ================= BOSHLANISH =================
-yubor({'ev': 'boot', 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
+def yonish_sababi():
+    try:
+        import machine
+        k = machine.reset_cause()
+    except (ImportError, AttributeError):
+        return '?'
+    if k == getattr(machine, 'PWRON_RESET', -1):
+        return 'tok'
+    if k == getattr(machine, 'WDT_RESET', -1):
+        return 'wdt'
+    return str(k)
+
+YON_SABAB = yonish_sababi()
+yubor({'ev': 'boot', 'sabab': YON_SABAB, 'ver': VER, 'D': KAL['D'], 'V10': KAL['V10'], 'V18': KAL['V18']})
 if CHOP:
     print("=" * 50)
-    print("  KROMKA STANSIYASI KONTROLLERI  v1.20  (ovoz MES tomonida)")
+    print("  KROMKA STANSIYASI KONTROLLERI  v%s  (yonish sababi: %s)" % (VER, YON_SABAB))
     print("  D1=GP%d  D2=GP%d  RUN=GP%d  V18=GP%d  RELE=GP%d  (GP%d ishlatilmaydi)"
           % (GP_D1, GP_D2, GP_RUN, GP_V18, GP_RELE, GP_AUDIO))
     print("  Buyruqlar: QR ALARM STOP TEST KALIB SET PING HOLAT HB")

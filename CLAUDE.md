@@ -69,7 +69,8 @@ Foydalanuvchi — muhandis, elektronika bilan tanish lekin dasturchi emas. Tushu
 
 Pico → brauzer:
 ```
-{"ev":"boot"} {"ev":"tezlik","v":18} {"ev":"uskuna","holat":1}
+{"ev":"boot","sabab":"tok|wdt","ver":"1.21"}   ← v1.21: yonish sababi; xotiraga yig'iladi (eski_ms bilan keladi)
+{"ev":"tezlik","v":18} {"ev":"uskuna","holat":1}
 {"ev":"olchov","n":42,"L":2474.5,"kod":"OK|FARQ|FAQAT1|FAQAT2","shubha":0,"L1":..,"L2":..,"d1":µs,"d2":µs,"v_olch":17.96,"v_nom":18,"yangi":1,"ish_ms":6650,"farq":2.8,"navbat":3}
 {"ev":"kalib","S":18,"t1":µs,"t2":µs,"dt":µs,"dtm":µs}   ← faqat KALIB 1 rejimida
 {"ev":"ogoh","ch":2,"sabab":"javob_yoq|yopishib_qolgan|iflos|tezlik_nomuvofiq","q":0}
@@ -143,6 +144,26 @@ Eski `SET K=..` ham qabul qilinadi — ikkala datchikka bir xil qiymat tushadi.
 Stansiya har 60 s `settings` ni so'raydi; `updated` o'zgarsa Pico ga `SET`. Hodisalar IndexedDB navbatda, faqat `ack` dan keyin o'chadi.
 
 ## Joriy holat (2026-09-20)
+
+### 2026-09-24: Pico ishlab turib qayta yuklanyapti — sabab qidirilmoqda (v1.21)
+
+**Kuzatilgan (MES jurnali, `mes.db`):**
+- 11:26 va 11:38 — Pico USB da "qotdi": stansiya `PING` ga javob olmay har ~14 s qayta ulandi, keyin Pico Windows dan butunlay yo'qoldi; pyserial `Присоединенное к системе устройство не работает` berdi. Faqat kabelni qayta ulash yordam berdi (bir marta boshqa kabel bilan ham Windows hech narsa ko'rmadi — ikkinchi qayta ulashda chiqdi).
+- 11:52–12:10 kuzatuv (15 daq): o'lchovlar aniq (550 mm → 548.5–551.0, 443 → 441.5–443.9, 2000 → 1997.8–1999.4), lekin **Pico 2 marta o'zi qayta yuklandi**: 11:58:56 (27 s uzilish) va 12:07:38 (0.3 s). Belgisi — o'lchov raqami `n` 14→1, 18→1; har biridan keyin yo'ldagi detal `FAQAT2` (309.9, 443.5 mm).
+- 12:26 da Pico dan to'g'ridan-to'g'ri o'qildi: **`machine.reset_cause() = 3` (WDT_RESET)**, uptime 18.9 daq → 12:07 dagi qayta yuklanish **qorovul (WDT 8 s)** tomonidan. Tok uzilishi emas.
+- 12:25:34 — stanok to'xtadi (`uskuna 0`) va **0.26 s ichida** Chrome port o'qishida xato bilan uzildi (`pico 0 → 1`), Pico qayta yuklanmagan (uptime buzilmagan).
+- Stanok har to'xtaganda emas (12:03 to'xtashida hech narsa bo'lmadi); 11:58 va 12:07 da stanok holati o'zgarmagan.
+
+**Taxmin (isbotlanmagan):** stanok/sexdagi uskunaning kommutatsiya shovqini USB liniyasini buzadi. Kuchsizi — USB bir lahza uziladi; kuchlisi — Pico ning USB yozuvi (`print`) blokda qoladi, sikl 8 s to'xtaydi, WDT qayta yuklaydi. Apparat tavsiyalari (foydalanuvchiga berildi): USB kabelga ferrit, qisqa ekranlangan kabel, kuch kabellaridan uzoq; AL-2402 0 V ↔ Pico GND ↔ yerga ulangan PC — yer halqasi ehtimoli.
+
+**Qilingan (diagnostika, pin/TZ mantiqi o'zgarmadi):**
+- **Proshivka v1.21:** yonganda `machine.reset_cause()` → `boot` hodisasida `sabab: tok|wdt` (rp2 da `machine.reset()`/`mpremote reset` ham `wdt` beradi!). `boot` endi `YIGILADI` da — yonishda stansiya hali yo'q, shuning uchun xotiradan `eski_ms` bilan MES ga yetadi. `HOLAT` da `sabab` va `up`. `sinov_pc.py` 41/41 (yangi S41).
+- **`stansiya.html`:** `pico holat:0` ga `sabab`: `usb_xato:<nom>` / `usb_yopildi` / `jim` / `topilmadi` / `qolda`. `boot` hodisasi MES ga `type:'boot'`.
+- Hujjatlar: TZ v2.3, `docs/onlayn_mes_hodisalar.md` 3/3a bo'limlari.
+- `archive/pico_kuzat.py` (Pico ni qayta ulanishini kutib 3 daq PING bilan kuzatadi, keyin kioskni ochadi), `archive/mes_kuzat.py` (MES hodisalarini 15 daq kuzatish), `archive/pico_kuzat_2026-09-24.log`.
+- Kiosk bir necha marta yopiq topildi (kim/nima yopgani aniqlanmadi).
+
+**Keyingi:** MES da `boot`/`pico` hodisalarini `sabab` bo'yicha yig'ib, uzilishlar `uskuna` o'zgarishi bilan bog'liqligini ko'rish. `wdt` ko'p bo'lsa — Pico sikli qayerda qotayotganini topish (masalan, `print` oldidan USB tayyorligini tekshirish). Apparat (ferrit, kabel) qilingandan keyin taqqoslash.
 
 ### 2026-09-23: ovoz MES tomoniga o'tkazildi (v1.20) + MES ga ma'lumot bormagani
 

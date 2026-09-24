@@ -228,7 +228,14 @@ async function openPort(p){
 }
 // Pico ulangan/uzilgan — MES jurnali uchun (Pico ga tok kelmasa yoki kabel uzilsa shu qoladi)
 let picoOxirgi=null;
-function picoHolat(h){if(picoOxirgi===h)return;picoOxirgi=h;queue({type:'pico',holat:h});}
+// `sabab` (faqat uzilishda) — MES jurnalida uzilish turini ajratish uchun (2026-09-24):
+//   usb_xato  — port o'qishda xato bilan uzildi (USB tebrandi, Pico qayta yuklandi)
+//   usb_yopildi — port o'zi yopildi (done)
+//   jim       — port ochiq, lekin PING ga javob yo'q
+//   topilmadi — sahifa ochilganda 10 s ichida Pico topilmadi
+//   qolda     — operator "Uzish" ni bosdi
+function picoHolat(h,sabab){if(picoOxirgi===h)return;picoOxirgi=h;
+  const ev={type:'pico',holat:h};if(!h&&sabab)ev.sabab=sabab;queue(ev);}
 // Yurak urishi: Pico shu kelib turgancha stansiya bor deb biladi; 3 s kelmasa o'lchovlarni o'zida yig'adi
 setInterval(()=>{if(writer)send('HB');},1000);
 
@@ -246,7 +253,7 @@ const JIM_MS=6000, JAVOB_MS=4000;
 let oxirgiQabul=0, pingVaqt=0;
 function qabul(){oxirgiQabul=Date.now();pingVaqt=0;}
 async function qaytaUlan(){
-  alive=false;await yopPort();picoHolat(0);
+  alive=false;await yopPort();picoHolat(0,'jim');
   $('picoLed').className='led';$('picoChip').className='chip bad';$('picoTxt').textContent='Pico jim — qayta ulanmoqda';
   setTimeout(autoConnect,500);
 }
@@ -275,7 +282,7 @@ async function connect(){
   try{await openPort(await navigator.serial.requestPort());}catch(e){verdict('bad','Ulanmadi',String(e.message||e));}
 }
 async function disconnect(){
-  alive=false;await yopPort();picoHolat(0);
+  alive=false;await yopPort();picoHolat(0,'qolda');
   $('picoLed').className='led';$('picoTxt').textContent='Pico yo\'q';$('picoChip').className='chip';$('conn').textContent='Pico ga ulanish';
 }
 async function send(cmd){if(!writer)return;try{await writer.write(new TextEncoder().encode(cmd+'\n'));}catch(e){}}
@@ -284,12 +291,14 @@ function kalQiymat(){return{D:nv($('kD'),2555),V10:nv($('kV10'),10),V18:nv($('kV
 function sendSet(){send('SET '+Object.entries(kalQiymat()).map(([k,v])=>k+'='+v).join(' '));}
 async function readLoop(){
   const dec=new TextDecoderStream();port.readable.pipeTo(dec.writable).catch(()=>{});reader=dec.readable.getReader();
+  let uzSabab='usb_yopildi';
   try{while(alive){const{value,done}=await reader.read();if(done)break;rx+=value;qabul();let i;
-    while((i=rx.indexOf('\n'))>=0){const line=rx.slice(0,i).trim();rx=rx.slice(i+1);if(line.startsWith('{'))handle(line);}}}catch(e){}
+    while((i=rx.indexOf('\n'))>=0){const line=rx.slice(0,i).trim();rx=rx.slice(i+1);if(line.startsWith('{'))handle(line);}}}
+  catch(e){uzSabab='usb_xato'+(e&&e.name?':'+e.name:'');}
   if(alive){
     // Aloqa uzildi (Pico qayta yuklandi, USB tebrandi). Portni to'liq yopib, o'zgaruvchilarni
     // tozalaymiz — aks holda port "ochiq" qolib, autoConnect uni band deb o'tkazib yuboradi.
-    alive=false;await yopPort();picoHolat(0);
+    alive=false;await yopPort();picoHolat(0,uzSabab);
     $('picoLed').className='led';$('picoChip').className='chip bad';$('picoTxt').textContent='Aloqa uzildi';$('conn').textContent='Pico ga ulanish';
     setTimeout(autoConnect,2000);
   }
@@ -347,7 +356,7 @@ function handle(line){
   switch(m.ev){
     case 'yigilgan':if(m.n||m.yoqolgan)verdict('warn','Pico xotirasidan '+m.n+' ta yozuv olindi',
       'stansiya ulanmagan paytda yig\'ilgan'+(m.yoqolgan?' · '+m.yoqolgan+' tasi xotira to\'lib yo\'qolgan':''));break;
-    case 'boot':sendSet();verdict('','Pico tayyor','QR kodni skanerlang');break;
+    case 'boot':sendSet();verdict('','Pico tayyor','QR kodni skanerlang');queue({type:'boot',sabab:m.sabab,ver:m.ver});break;
     case 'uskuna':chip('uskChip',m.holat?'ok':'','uskuna: '+(m.holat?'ishlayapti':'to\'xtagan'));queue({type:'uskuna',holat:m.holat});break;
     case 'tezlik':chip('vChip','info','tezlik: '+m.v+' m/min');queue({type:'tezlik',v:m.v});break;
     case 'holat':if(m.alarm!==undefined)alarmUI(!!m.alarm);if(m.ver)$('picoTxt').textContent='Pico v'+m.ver;
@@ -376,6 +385,9 @@ function eskiHodisa(m){
     log.unshift({type:'avariya_toxtash',ts,cls:'bad',matn:toxtashMatn(m)+' (xotiradan)'});renderLog();}
   else if(m.ev==='tiqilish'){queue({type:'tiqilish',sabab:m.sabab,n:m.n,L1:m.L1,L2:m.L2,xotiradan:1},ts);
     log.unshift({type:'tiqilish',ts,cls:'bad',matn:tiqilishMatn(m)+' (xotiradan)'});renderLog();}
+  // v1.21: Pico yonganda stansiya hali gapirmagan bo'ladi — "boot" doim shu yo'l bilan keladi.
+  // sabab: tok (tok berildi/pasaydi) | wdt (qorovul: dastur 8 s qotdi, yoki mpremote reset)
+  else if(m.ev==='boot')queue({type:'boot',sabab:m.sabab,ver:m.ver,xotiradan:1},ts);
 }
 /* Detal D1 ga KIRGAN lahza. O'lchov D2 dan chiqqanda tayyor bo'ladi, ya'ni
    detal kirganidan ~D/v (10 m/min da ~15 s) keyin. QR skaner esa detal
@@ -738,7 +750,7 @@ $('stIn').oninput=()=>$('stName').textContent=ST();
     navigator.serial.addEventListener('disconnect',()=>{if(port)disconnect();});
   }
   const ok=await autoConnect();
-  setTimeout(()=>{if(!port)picoHolat(0);},10000);   // 10 s da Pico topilmasa — MES da stanok o'chiq
+  setTimeout(()=>{if(!port)picoHolat(0,'topilmadi');},10000);   // 10 s da Pico topilmasa — MES da stanok o'chiq
   if(!ok)verdict('warn','Pico kutilmoqda','bir marta "Pico ga ulanish" bosib portni tanlang — keyin har safar avtomatik ulanadi');
   setInterval(()=>{if(!port)autoConnect();},5000);   // ulanmagan bo'lsa — jimgina qayta urinadi
 })();

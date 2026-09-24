@@ -655,6 +655,38 @@ def S40():
             and all(abs(olch[i] - uzunlik[i]) < 15 for i in range(len(uzunlik))),
             [olch, [e['kod'] for e in o]])
 
+def S41():
+    # v1.21: yonish sababi (reset_cause) aniqlanadi; "boot" stansiya yo'q paytda
+    # xotiraga tushadi va HB kelganda eski_ms bilan chiqadi; HOLAT da sabab va up bor.
+    import io, builtins as B
+    machine.PWRON_RESET, machine.WDT_RESET = 1, 3
+    sabab = []
+    for k in (1, 3, 5):
+        machine.reset_cause = lambda k=k: k
+        sabab.append(M.yonish_sababi())
+    del machine.reset_cause
+    sabab.append(M.yonish_sababi())                   # reset_cause yo'q platforma
+    yangi_holat(); M.yubor = ASL_YUBOR
+    M.yigilgan.clear(); M.XOST.update({'oxir': None, 'yoqolgan': 0})
+    chiq = []; asl = B.print
+    B.print = lambda *a, **k: chiq.append(' '.join(str(x) for x in a))
+    try:
+        M.yubor({'ev': 'boot', 'sabab': 'wdt', 'ver': M.VER})
+        n_xot = len(M.yigilgan)
+        M.poll = type('P', (), {'poll': lambda s, t=0: [1]})()
+        M.sys.stdin = io.StringIO('HB\nHOLAT\n')
+        ASL_BUYRUQ(); ASL_BUYRUQ()
+        js = [json.loads(s) for s in chiq if s.startswith('{')]
+    finally:
+        B.print = asl; M.yubor = lambda d: CHIQ.append(json.loads(json.dumps(d)))
+        M.XOST['oxir'] = None
+    boot = [j for j in js if j['ev'] == 'boot']
+    hol = [j for j in js if j['ev'] == 'holat']
+    tekshir('41 yonish sababi: tok/wdt aniqlanadi, boot xotiradan chiqadi, HOLAT da sabab/up',
+            sabab == ['tok', 'wdt', '5', '?'] and n_xot == 1 and boot and boot[0]['sabab'] == 'wdt'
+            and 'eski_ms' in boot[0] and hol and 'sabab' in hol[0] and 'up' in hol[0]
+            and hol[0]['ver'] == M.VER, [sabab, js])
+
 def yetib_bor_oxirgi(l, x, ms_max=120000):
     """Oxirgi qo'yilgan detal old qirrasi x ga yetguncha yurgizish."""
     for _ in range(ms_max // 5):

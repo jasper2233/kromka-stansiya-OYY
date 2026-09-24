@@ -59,6 +59,28 @@ detal qolgan; `birga` — uzun detal ikkala datchikda. Bu detallarning o'lchovi
 `holat: 1` — stansiya Pico ni topdi; `0` — uzildi. Stanok ishlamayotganini
 shu bilan bilasiz.
 
+2026-09-24 dan `holat: 0` da **`sabab`** ham keladi (diagnostika uchun, majburiy emas):
+
+| `sabab` | Ma'nosi |
+|---|---|
+| `usb_xato:<nom>` | port o'qishda xato bilan uzildi — USB tebrandi yoki Pico qayta yuklandi |
+| `usb_yopildi` | port o'zi yopildi |
+| `jim` | port ochiq, lekin Pico `PING` ga 4 s javob bermadi |
+| `topilmadi` | sahifa ochilganda 10 s ichida Pico topilmadi |
+| `qolda` | operator "Uzish" tugmasini bosdi |
+
+### 3a. `boot` — Pico yondi (proshivka v1.21)
+
+```json
+{"type":"boot","sabab":"wdt","ver":"1.21","xotiradan":1}
+```
+`sabab: tok` — Pico ga tok berildi (kabel ulandi yoki ta'minot pasayib tiklandi);
+`wdt` — qorovul taymeri: Pico dasturi 8 s dan ko'p qotib qolgan va o'zini qayta
+yukladi (servis `mpremote reset` ham shu kodni beradi). Pico yonganda stansiya
+hali ulanmagan bo'ladi, shuning uchun `boot` odatda `xotiradan: 1` bilan va asl
+vaqti bilan keladi. Qayta yuklanishda yo'ldagi detallar yozuvi yo'qoladi —
+keyingi 1–2 o'lchov `FAQAT2` bo'lishi normal.
+
 ## 4. `xotiradan: 1` — keyin yetkazilgan yozuv
 
 Stansiya (kompyuter/brauzer) o'chiq bo'lsa, Pico o'lchovlarni o'z xotirasida

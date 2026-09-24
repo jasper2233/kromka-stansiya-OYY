@@ -39,7 +39,7 @@ pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px s
   <div class="k">Texnik topshiriq</div>
   <h1>Kromka stansiyasi — o'lchov va MES ga uzatish</h1>
   <p>Detal uzunligini ikki fotoelektrik datchik bilan o'lchash, tiqilish va nosozliklarni aniqlash, natijani MES ga uzatish, ovoz va yorug'lik bilan ogohlantirish</p>
-  <div class="meta"><span>Versiya 2.2</span><span>23 sentyabr 2026</span><span>Proshivka v1.20</span><span>Kontroller: Raspberry Pi Pico</span></div>
+  <div class="meta"><span>Versiya 2.3</span><span>24 sentyabr 2026</span><span>Proshivka v1.21</span><span>Kontroller: Raspberry Pi Pico</span></div>
 </div>
 
 <p>Bu hujjat v1.2 (6 sentyabr) TZ sining o'rnini bosadi. v1.2 da apparat ulanishi to'g'ri yozilgan, lekin o'lchash mantiqi, signallar va MES bilan aloqa shundan keyin sezilarli o'zgardi. Eski hujjat <code>docs/TZ_kromka_kontroller.html</code> da tarix sifatida qoladi.</p>
@@ -180,8 +180,10 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 {"ev":"uskuna","holat":1}   {"ev":"tezlik","v":18}   {"ev":"holat","alarm":1}
 {"ev":"sig","r":"qr|avariya|test|idle","on":1|0,"ms":125|1000}   ← lampa almashdi: ovozni MES tomoni shu lahzada chaladi (5.1)
 {"ev":"yigilgan","n":12,"yoqolgan":0}   ← xotiradagi yozuvlar chiqishidan oldin
-{"ev":"pong","up":ms}   {"ev":"kal",...}   {"ev":"boot",...}</pre>
-<p>Stansiya jim bo'lsa Pico USB ga umuman yozmaydi (o'qilmayotgan portga yozish kontrollerni qotirishi mumkin): <code>olchov</code>, <code>ogoh</code>, <code>tiqilish</code>, <code>avariya_toxtash</code>, <code>uskuna</code> xotiraga yig'iladi (300 tagacha), qolgani tashlanadi. Stansiya qayta gapirganda har yozuv <code>"eski_ms"</code> (necha ms oldin bo'lgani) bilan chiqadi.</p>
+{"ev":"pong","up":ms}   {"ev":"kal",...}
+{"ev":"boot","sabab":"tok|wdt","ver":"1.21",...}   ← v1.21: yonish sababi (machine.reset_cause)
+HOLAT javobida ham "sabab" va "up" (ms, yonganidan beri)</pre>
+<p>Stansiya jim bo'lsa Pico USB ga umuman yozmaydi (o'qilmayotgan portga yozish kontrollerni qotirishi mumkin): <code>olchov</code>, <code>ogoh</code>, <code>tiqilish</code>, <code>avariya_toxtash</code>, <code>uskuna</code>, <code>boot</code> xotiraga yig'iladi (300 tagacha), qolgani tashlanadi. Stansiya qayta gapirganda har yozuv <code>"eski_ms"</code> (necha ms oldin bo'lgani) bilan chiqadi.</p>
 
 <h2><span>8</span> MES bilan aloqa</h2>
 <h3>8.1 Endpointlar</h3>
@@ -256,6 +258,7 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 <h2><span>12</span> Versiyalar</h2>
 <table>
 <tr><th class="m">Versiya</th><th>O'zgarish</th></tr>
+<tr><td class="m">v1.21</td><td>Diagnostika: yonganda <code>machine.reset_cause()</code> o'qiladi, <code>boot</code> hodisasida <code>sabab: tok|wdt</code> (xotiraga ham yig'iladi, MES ga yetadi); <code>HOLAT</code> da <code>sabab</code>, <code>up</code>. Stansiya <code>pico holat:0</code> ga uzilish turini (<code>usb_xato|jim|...</code>) qo'shadi. Sabab: 2026-09-24 da Pico ishlab turib qorovul (WDT) bilan qayta yuklangani aniqlandi. Pin va mantiq o'zgarmadi</td></tr>
 <tr><td class="m">v1.20</td><td><b>Ovoz Pico dan olib tashlandi</b> (GP16 PWM yo'q, oyoq doim past) — tovushni MES tomoni chaladi. Lampa almashganda <code>sig</code> hodisasi: ovoz bilan chiroq fazasi siljimaydi (5.1). <code>HQ/HA/AV</code> Pico da faqat saqlanadi</td></tr>
 <tr><td class="m">v1.19</td><td>Navbat sig'imi eng kichik detal (150 mm) bo'yicha hisoblanadi; juftlash chegarasi 25% → 3%; tezlik almashgan detallar solishtirilmaydi</td></tr>
 <tr><td class="m">v1.18</td><td>Fizik tezlik tekshiruvi — qayta yuklashdan keyin navbat siljimaydi</td></tr>
