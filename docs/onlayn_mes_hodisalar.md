@@ -69,6 +69,16 @@ shu bilan bilasiz.
 | `topilmadi` | sahifa ochilganda 10 s ichida Pico topilmadi |
 | `qolda` | operator "Uzish" tugmasini bosdi |
 
+### 3b. `id` va dublikatlar (proshivka v1.22)
+
+Pico muhim hodisalarni (`olchov`, `ogoh`, `avariya_toxtash`, `tiqilish`,
+`uskuna`, `boot`) stansiya tasdiqlamaguncha qayta yuboradi. Shuning uchun bu
+hodisalarning `id` si Pico raqamidan yasaladi: `KROMKA-01-p6fa49808-17`
+(`p` + yonish belgisi + tartib raqami). **Bir xil `id` ikki marta kelishi
+mumkin — MES uni dublikat sifatida tashlashi shart** (sinov serveri
+`INSERT OR IGNORE` qiladi). Boshqa hodisalar (`pico`, `tezlik`) eski
+ko'rinishdagi `id` da qoladi.
+
 ### 3a. `boot` — Pico yondi (proshivka v1.21)
 
 ```json

@@ -1,4 +1,7 @@
-# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.21)
+# main.py — KROMKA STANSIYASI KONTROLLERI  (TZ v1.2, proshivka v1.22)
+#
+# v1.22 (2026-09-24): muhim hodisalar TASDIQ BILAN yetkaziladi — "ACK" kelmaguncha
+# xotiradan o'chmaydi (batafsil: "XOTIRAGA YIG'ISH" bo'limi). Stansiya v1.22+ kerak.
 #
 # v1.21 (2026-09-24): QAYTA YUKLANISH SABABI. Pico ishlab turib o'zi qayta yuklanardi
 # (qorovul — WDT), lekin buni hech qayerda ko'rib bo'lmasdi. Endi yonganda
@@ -38,6 +41,7 @@
 #   KALIB 1  /  KALIB 0         kalibrlash rejimi
 #   SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=0|1
 #   HB                          stansiya yurak urishi (har 1 s), javob yo'q
+#   ACK <xb> <xq> [<xq> ...]    v1.22: shu yozuvlar yetdi — xotiradan o'chadi
 #   PING                        tiriklik tekshiruvi
 #   HOLAT                       joriy holat
 #
@@ -46,7 +50,7 @@
 from machine import Pin
 import time, sys, select, json
 
-VER = '1.21'
+VER = '1.22'
 
 # ================= OYOQCHALAR =================
 GP_D1, GP_D2      = 1, 5
@@ -168,11 +172,31 @@ def signal(yon):
 # uzilgan): o'lchov va hodisalar ekranga emas, xotiraga yig'iladi. Stansiya
 # qayta gapirganda hammasi "eski_ms" (necha ms oldin bo'lgani) bilan yuboriladi.
 # Xotira — RAM: Pico ga tok kelib turguncha saqlanadi.
+#
+# TASDIQ BILAN YETKAZISH (v1.22, 2026-09-24). Ilgari yozuv USB ga chiqarilishi
+# bilan xotiradan o'chirilardi. Kompyuter uyqudan uyg'onayotganda Chrome bitta HB
+# yuborib ulgurdi, lekin o'qish hali tiklanmagan edi — Pico ~100 o'lchovni
+# "yubordim" deb o'chirdi, MES ga bittasi yetdi. Endi YIGILADI dagi har hodisa
+# (stansiya bor paytda ham) raqam oladi — "xq" (+ "xb": shu yonishning belgisi) —
+# va stansiya "ACK xq ..." qaytarmaguncha xotirada turadi. Tasdiq QAYTA_MS ichida
+# kelmasa — "eski_ms" bilan qayta yuboriladi. Stansiya id ni xb+xq dan yasaydi,
+# shuning uchun ikki marta yetgan yozuv MES da dublikat bo'lmaydi.
 XOST_MS    = 3000
 XOTIRA_MAX = 300
+QAYTA_MS   = 5000
+QAYTA_BIR  = 40            # bir qadamda eng ko'pi shuncha qayta yuboriladi (sikl cho'zilmasin)
 YIGILADI   = ('olchov', 'ogoh', 'avariya_toxtash', 'tiqilish', 'uskuna', 'boot')
-XOST       = {'oxir': None, 'yoqolgan': 0}
-yigilgan   = []            # (ticks_ms, json matn)
+XOST       = {'oxir': None, 'yoqolgan': 0, 'seq': 0}
+yigilgan   = []            # [ticks_ms, xq, json matn, oxirgi_yuborish_ms | None]
+
+def _yonish_belgisi():
+    try:
+        import os
+        return '%08x' % int.from_bytes(os.urandom(4), 'big')
+    except (ImportError, AttributeError, NotImplementedError, OSError):
+        return '%08x' % (time.ticks_us() & 0xffffffff)
+
+XB = _yonish_belgisi()
 
 # ---------- QOROVUL (watchdog) ----------
 # Dastur biror joyda qotib qolsa (masalan USB yozuvi blokda tursa), qorovul
@@ -205,24 +229,61 @@ def yubor(d):
     # print() butun dasturni qotirib qo'yishi mumkin — Pico o'lchashdan ham
     # to'xtaydi. Muhim hodisalar xotiraga yig'iladi, qolgani (holat, kal,
     # tezlik) tashlanadi: stansiya ulanganda HOLAT bilan hammasini qayta oladi.
-    if not xost_bor():
-        if d.get('ev') in YIGILADI:
-            if len(yigilgan) >= XOTIRA_MAX:
-                yigilgan.pop(0)
-                XOST['yoqolgan'] += 1
-            yigilgan.append((time.ticks_ms(), json.dumps(d)))
-        return
-    print(json.dumps(d))
+    # Muhim hodisa stansiya bor paytda ham xotirada qoladi — ACK gacha (v1.22).
+    bor = xost_bor()
+    if d.get('ev') in YIGILADI:
+        XOST['seq'] += 1
+        d['xq'] = XOST['seq']; d['xb'] = XB
+        if len(yigilgan) >= XOTIRA_MAX:
+            yigilgan.pop(0)
+            XOST['yoqolgan'] += 1
+        hozir = time.ticks_ms()
+        yigilgan.append([hozir, XOST['seq'], json.dumps(d), hozir if bor else None])
+    if bor:
+        print(json.dumps(d))
+
+def _eski(r, hozir):
+    # JSON oxiridagi "}" oldiga eski_ms qo'shamiz
+    return r[2][:-1] + ', "eski_ms": %d}' % time.ticks_diff(hozir, r[0])
 
 def xotirani_yubor():
+    # Stansiya qaytdi: hali tasdiqlanmagan hamma yozuv "eski_ms" bilan. O'chirilMAYDI —
+    # ACK kelganda o'chadi; kelmasa qayta_yubor() QAYTA_MS dan keyin takrorlaydi.
     hozir = time.ticks_ms()
     print(json.dumps({'ev': 'yigilgan', 'n': len(yigilgan), 'yoqolgan': XOST['yoqolgan']}))
-    while yigilgan:
-        ms, s = yigilgan.pop(0)
-        # JSON oxiridagi "}" oldiga eski_ms qo'shamiz
-        print(s[:-1] + ', "eski_ms": %d}' % time.ticks_diff(hozir, ms))
+    for r in yigilgan:
+        print(_eski(r, hozir))
+        r[3] = hozir
         wdt_boq()                        # 300 tagacha yozuv — qorovul kutsin
     XOST['yoqolgan'] = 0
+
+def qayta_yubor(hozir):
+    # Tasdiqlanmagan yozuvlar — yetib bormagan bo'lishi mumkin (USB endi tiklandi).
+    if not yigilgan or not xost_bor():
+        return
+    k = 0
+    for r in yigilgan:
+        if r[3] is None or time.ticks_diff(hozir, r[3]) >= QAYTA_MS:
+            print(_eski(r, hozir))
+            r[3] = hozir
+            k += 1
+            if k >= QAYTA_BIR:
+                break
+
+def tasdiq(q):
+    # "ACK <xb> 12 13 14" — shu raqamli yozuvlar stansiyaga yetdi, xotiradan o'chadi.
+    # xb boshqa bo'lsa (Pico orada qayta yongan, raqamlar 1 dan boshlangan) —
+    # e'tiborsiz: eski tasdiq yangi yozuvni o'chirib yubormasin.
+    if not q or q[0] != XB:
+        return
+    s = set()
+    for x in q[1:]:
+        try:
+            s.add(int(x))
+        except ValueError:
+            pass
+    if s:
+        yigilgan[:] = [r for r in yigilgan if r[1] not in s]
 
 def xost_gapirdi():
     yangi = not xost_bor()
@@ -782,6 +843,8 @@ def buyruq_tekshir():
     cmd = q[0].upper()
     if cmd == 'HB':
         pass                             # stansiya yurak urishi (1 s) — javobsiz
+    elif cmd == 'ACK':
+        tasdiq(q[1:])                    # v1.22: yetkazilgan yozuvlar xotiradan o'chadi
     elif cmd == 'QR':
         qr_boshla()
     elif cmd == 'ALARM':
@@ -826,7 +889,8 @@ def buyruq_tekshir():
         d.update({'ev': 'holat', 'alarm': 1 if AL['rejim'] == 'AVARIYA' else 0,
                   'uskuna': uskuna_holat(), 'v_nom': tezlik_nom(),
                   'kalib': 1 if kalib_rejim else 0, 'n': son, 'navbat': len(kutuv),
-                  'ver': VER, 'sabab': YON_SABAB, 'up': time.ticks_ms()})
+                  'ver': VER, 'sabab': YON_SABAB, 'up': time.ticks_ms(),
+                  'xotira': len(yigilgan), 'xb': XB})
         yubor(d)
 
 # ================= BOSHLANISH =================
@@ -930,6 +994,7 @@ def qadam():
         chop("  tezlik: %d m/min" % v)
 
     alarm_tick()
+    qayta_yubor(hozir)                   # v1.22: tasdiqlanmagan yozuvlar
     led.value(1 if (kuzat[1]['yopiq'] or kuzat[2]['yopiq']) else 0)
     wdt_boq()
 

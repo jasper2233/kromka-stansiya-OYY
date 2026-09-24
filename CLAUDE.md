@@ -81,7 +81,9 @@ Pico → brauzer:
 {"ev":"holat","ver":"1.9","alarm":0,"uskuna":0,"v_nom":10,"kalib":0,"n":0,"navbat":0,"D":..,"V10":..,"V18":..,"K1":..,"K2":..,"B1":..,"B2":..,"C":..,"TD":..,"AO":..}  ← HOLAT javobi
 {"ev":"kal",...barcha KAL}  ← SET javobi   {"ev":"pong","up":ms}  ← PING javobi
 ```
-Brauzer → Pico (matn + `\n`): `QR` `ALARM` `STOP` `TEST` `KALIB 1|0` `SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=0|1` `HB` `PING` `HOLAT`
+Brauzer → Pico (matn + `\n`): `QR` `ALARM` `STOP` `TEST` `KALIB 1|0` `SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=0|1` `HB` `PING` `HOLAT` `ACK <xb> <xq>...`
+
+- **v1.22 tasdiq:** `olchov/ogoh/avariya_toxtash/tiqilish/uskuna/boot` da `"xq":N,"xb":"hex8"`; stansiya `ACK xb xq...` qaytarmaguncha Pico xotirada saqlaydi va 5 s da `eski_ms` bilan qayta yuboradi. MES `id` = `STANSIYA-p<xb>-<xq>` (dublikat tashlanadi).
 
 - `HB` — stansiya yurak urishi, har 1 s, javobsiz. Pico `XOST_MS`=3 s buyruq ko'rmasa — stansiya yo'q: `olchov/ogoh/avariya_toxtash/uskuna` RAM ga yig'iladi (300 tagacha), stansiya qayta gapirganda `yigilgan` + har yozuv `eski_ms` bilan chiqadi. Stansiya ularni signal bermasdan, `ts = hozir − eski_ms` va `xotiradan:1` bilan MES ga yozadi.
 - `HQ`/`HA` — skaner va avariya ohangi (Hz), `AV` — avariya ovozi (0 = ovozsiz, lampa baribir miltillaydi; skaner ovoziga ta'sir qilmaydi).
@@ -144,6 +146,15 @@ Eski `SET K=..` ham qabul qilinadi — ikkala datchikka bir xil qiymat tushadi.
 Stansiya har 60 s `settings` ni so'raydi; `updated` o'zgarsa Pico ga `SET`. Hodisalar IndexedDB navbatda, faqat `ack` dan keyin o'chadi.
 
 ## Joriy holat (2026-09-20)
+
+### 2026-09-24 (davomi): ferrit, kompyuter uyqusi, ~100 o'lchov yo'qoldi → v1.22 (ACK)
+
+- **Ferrit** USB kabelga kiydirildi (~13:00). Shundan keyin Pico ~1.5 soat bir marta ham qayta yuklanmadi (`n` 1→141 uzluksiz), stanok 4 marta yoqib-o'chirildi — USB uzilmadi. Lekin USB faol bo'lgan vaqt atigi ~20 daq (kompyuter uxlab qoldi) — **to'liq smenada qayta kuzatish kerak**.
+- **Kompyuter 13:26:53 da uxladi** (Kernel-Power 42, "System Idle"), 14:35 da quvvat tugmasi bilan uyg'otildi. Monoblokda **batareya bor** (SAMSUNG, 30%), o'sha payt batareyada ishlagan; batareya uchun uyqu 15 daq edi (20-sentyabrda faqat `-ac` o'chirilgan edi). **`standby/hibernate-timeout-dc 0` qilindi.** Quvvat manbai kuniga bir necha marta almashadi (Kernel-Power 105: 8:33, 11:03, 12:31, 14:35) — zaryadlovchini tekshirish foydalanuvchiga aytildi.
+- **~100 o'lchov yo'qoldi** (`n` 3 → 104 sakradi, MES ga faqat 104 `xotiradan` bilan keldi). Sabab: Pico xotirani chiqarishi bilan o'chirardi (tasdiqsiz). Uyg'onish paytida Chrome bitta `HB` yubordi, Pico ~100 yozuvni chiqardi, lekin USB o'qish hali tiklanmagan edi.
+- **Proshivka v1.22 — tasdiq bilan yetkazish:** `YIGILADI` dagi har hodisa (stansiya bor paytda ham) `xq` (tartib raqami) va `xb` (yonish belgisi, `os.urandom`) oladi, `yigilgan` da `ACK <xb> <xq>...` kelguncha turadi; `QAYTA_MS`=5 s da tasdiq bo'lmasa `eski_ms` bilan qayta (bir qadamda ≤40). Begona `xb` dagi ACK e'tiborsiz (Pico qayta yonsa raqamlar 1 dan boshlanadi). `HOLAT` da `xotira`, `xb`. **Stansiya v1.22+ kerak** — eskisi ACK yubormaydi, yozuvlar har 5 s qayta keladi.
+- **`stansiya.html`:** `xq` li xabarga `ACK` (200 ms da guruhlab), MES `id` = `STANSIYA-p<xb>-<xq>` — qayta kelgan nusxa MES da `INSERT OR IGNORE` bilan tashlanadi, sahifada ham (`korilgan`, 3000 ta) ikkinchi marta ishlanmaydi.
+- Sinov: `sinov_pc.py` 42/42 (S29 yangilandi, S42 yangi). Jonli: v1.22 COM6 ga yozildi, ACK siz 5 s da qayta keldi, ACK dan keyin `xotira 0`, kiosk bilan MES ga `KROMKA-01-p6fa49808-N` id lar tushdi, dublikat yo'q. Kalibrlash saqlanib qoldi.
 
 ### 2026-09-24: Pico ishlab turib qayta yuklanyapti — sabab qidirilmoqda (v1.21)
 

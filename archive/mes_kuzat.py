@@ -1,7 +1,7 @@
-﻿import json, time, urllib.request
+﻿import json, sys, time, urllib.request
 MES = 'http://localhost:8000'
 korilgan = set(); t0 = time.time(); boshi = time.strftime('%Y-%m-%dT%H:%M', time.gmtime())
-while time.time() - t0 < 900:
+while time.time() - t0 < (int(sys.argv[1]) if len(sys.argv) > 1 else 900):
     try:
         rows = json.load(urllib.request.urlopen(MES + '/api/recent?n=50', timeout=10))
         for e in reversed(rows):
@@ -15,3 +15,4 @@ while time.time() - t0 < 900:
         print(time.strftime('%H:%M:%S'), 'MES XATO', x, flush=True)
     time.sleep(10)
 print('TUGADI', flush=True)
+

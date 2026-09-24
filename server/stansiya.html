@@ -350,8 +350,30 @@ function onSig(m){
 ['keydown','pointerdown'].forEach(e=>addEventListener(e,acOch,{passive:true}));
 
 /* ---------- Pico hodisalari ---------- */
+/* ---------- TASDIQ (proshivka v1.22) ----------
+   Pico muhim hodisaga raqam beradi ("xq", shu yonishning belgisi "xb") va stansiya
+   "ACK xb xq..." qaytarmaguncha uni xotirasida saqlab, 5 s da qayta yuboradi.
+   Sabab: 2026-09-24 kompyuter uyg'onayotganda Pico ~100 o'lchovni chiqarib o'chirdi,
+   stansiya esa o'qimadi — hammasi yo'qoldi. MES id si xb+xq dan yasaladi: ikki marta
+   kelgan yozuv MES da ham, bu yerda ham bir marta hisoblanadi. */
+const ackNavbat=new Map();           // xb -> [xq...]
+const korilgan=new Map();            // xid -> 1 (qayta kelganini tanish uchun, oxirgi 3000 ta)
+let joriyXid=null;                   // handle() davomida birinchi queue() shu id ni oladi
+function ackQosh(m){if(!ackNavbat.has(m.xb))ackNavbat.set(m.xb,[]);ackNavbat.get(m.xb).push(m.xq);}
+setInterval(()=>{if(!writer)return;
+  for(const[xb,l]of ackNavbat){while(l.length)send('ACK '+xb+' '+l.splice(0,40).join(' '));ackNavbat.delete(xb);}},200);
 function handle(line){
   let m;try{m=JSON.parse(line);}catch(e){return;}
+  if(m.xq!=null&&m.xb){
+    ackQosh(m);                                      // allaqachon kelgan bo'lsa ham — Pico o'chirsin
+    const xid='p'+m.xb+'-'+m.xq;
+    if(korilgan.has(xid))return;                     // qayta yuborilgan nusxa — ishlov berilgan
+    korilgan.set(xid,1);if(korilgan.size>3000)korilgan.delete(korilgan.keys().next().value);
+    joriyXid=ST()+'-'+xid;
+  }
+  try{ishlov(m);}finally{joriyXid=null;}
+}
+function ishlov(m){
   if(m.eski_ms!=null){eskiHodisa(m);return;}
   switch(m.ev){
     case 'yigilgan':if(m.n||m.yoqolgan)verdict('warn','Pico xotirasidan '+m.n+' ta yozuv olindi',
@@ -468,7 +490,7 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- MES ---------- */
-function queue(ev,ts){const rec={id:ST()+'-'+String(++seq).padStart(6,'0')+'-'+Date.now().toString(36),station:ST(),ts:(ts||new Date()).toISOString(),...ev};navbat.push(rec);idbPut(rec);qChip();flush();}
+function queue(ev,ts){const id=joriyXid||ST()+'-'+String(++seq).padStart(6,'0')+'-'+Date.now().toString(36);joriyXid=null;const rec={id,station:ST(),ts:(ts||new Date()).toISOString(),...ev};navbat.push(rec);idbPut(rec);qChip();flush();}
 async function flush(){
   if(!API()||sending||!navbat.length)return;sending=true;const pkt=navbat.slice(0,25);
   try{const r=await fetch(API()+'/api/events',{method:'POST',headers:hdr(),body:JSON.stringify({events:pkt})});

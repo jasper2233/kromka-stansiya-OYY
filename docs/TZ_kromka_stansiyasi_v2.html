@@ -39,7 +39,7 @@ pre{font-family:var(--mono);font-size:12.5px;background:var(--tint);border:1px s
   <div class="k">Texnik topshiriq</div>
   <h1>Kromka stansiyasi — o'lchov va MES ga uzatish</h1>
   <p>Detal uzunligini ikki fotoelektrik datchik bilan o'lchash, tiqilish va nosozliklarni aniqlash, natijani MES ga uzatish, ovoz va yorug'lik bilan ogohlantirish</p>
-  <div class="meta"><span>Versiya 2.3</span><span>24 sentyabr 2026</span><span>Proshivka v1.21</span><span>Kontroller: Raspberry Pi Pico</span></div>
+  <div class="meta"><span>Versiya 2.4</span><span>24 sentyabr 2026</span><span>Proshivka v1.22</span><span>Kontroller: Raspberry Pi Pico</span></div>
 </div>
 
 <p>Bu hujjat v1.2 (6 sentyabr) TZ sining o'rnini bosadi. v1.2 da apparat ulanishi to'g'ri yozilgan, lekin o'lchash mantiqi, signallar va MES bilan aloqa shundan keyin sezilarli o'zgardi. Eski hujjat <code>docs/TZ_kromka_kontroller.html</code> da tarix sifatida qoladi.</p>
@@ -168,7 +168,7 @@ L2     = v·(t2 − K2) − B2
 <h2><span>7</span> Protokol: Pico ↔ brauzer</h2>
 <p>USB CDC, 115200, har xabar bitta qator JSON.</p>
 <h3>7.1 Brauzer → Pico</h3>
-<pre>QR | ALARM | STOP | TEST | KALIB 1|0 | HB | PING | HOLAT
+<pre>QR | ALARM | STOP | TEST | KALIB 1|0 | HB | PING | HOLAT | ACK xb xq...   (ACK — v1.22)
 SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=0|1</pre>
 <p><code>SET</code> qiymatlari o'zgarganda Pico ularni <code>kal.json</code> ga yozadi va yonganda o'qiydi — stansiyasiz yonsa ham oxirgi kalibrlash bilan o'lchaydi.</p>
 <h3>7.2 Pico → brauzer</h3>
@@ -182,7 +182,8 @@ SET D=.. V10=.. V18=.. K1=.. K2=.. B1=.. B2=.. C=.. TD=.. AO=0|1 HQ=Hz HA=Hz AV=
 {"ev":"yigilgan","n":12,"yoqolgan":0}   ← xotiradagi yozuvlar chiqishidan oldin
 {"ev":"pong","up":ms}   {"ev":"kal",...}
 {"ev":"boot","sabab":"tok|wdt","ver":"1.21",...}   ← v1.21: yonish sababi (machine.reset_cause)
-HOLAT javobida ham "sabab" va "up" (ms, yonganidan beri)</pre>
+HOLAT javobida ham "sabab" va "up" (ms, yonganidan beri), v1.22: "xotira" (tasdiqlanmagan yozuvlar), "xb"
+v1.22: muhim hodisalarda "xq":17,"xb":"6fa49808" — stansiya "ACK 6fa49808 17 ..." qaytaradi</pre>
 <p>Stansiya jim bo'lsa Pico USB ga umuman yozmaydi (o'qilmayotgan portga yozish kontrollerni qotirishi mumkin): <code>olchov</code>, <code>ogoh</code>, <code>tiqilish</code>, <code>avariya_toxtash</code>, <code>uskuna</code>, <code>boot</code> xotiraga yig'iladi (300 tagacha), qolgani tashlanadi. Stansiya qayta gapirganda har yozuv <code>"eski_ms"</code> (necha ms oldin bo'lgani) bilan chiqadi.</p>
 
 <h2><span>8</span> MES bilan aloqa</h2>
@@ -258,6 +259,7 @@ HOLAT javobida ham "sabab" va "up" (ms, yonganidan beri)</pre>
 <h2><span>12</span> Versiyalar</h2>
 <table>
 <tr><th class="m">Versiya</th><th>O'zgarish</th></tr>
+<tr><td class="m">v1.22</td><td><b>Tasdiq bilan yetkazish.</b> Muhim hodisalar (<code>olchov, ogoh, avariya_toxtash, tiqilish, uskuna, boot</code>) stansiya bor paytda ham <code>"xq"</code> raqami va <code>"xb"</code> (yonish belgisi) bilan chiqadi va stansiya <code>ACK xb xq...</code> qaytarmaguncha Pico xotirasida qoladi; 5 s da tasdiq bo'lmasa <code>eski_ms</code> bilan qayta yuboriladi. MES <code>id</code> = <code>STANSIYA-p&lt;xb&gt;-&lt;xq&gt;</code> — ikki marta yetgani dublikat bo'lmaydi. Sabab: 2026-09-24 kompyuter uyqudan uyg'onayotganda Pico ~100 o'lchovni chiqarib o'chirdi, stansiya o'qimadi — yo'qoldi. <b>Stansiya v1.22+ bilan ishlaydi</b> (eski stansiya ACK yubormaydi — yozuvlar har 5 s qayta keladi)</td></tr>
 <tr><td class="m">v1.21</td><td>Diagnostika: yonganda <code>machine.reset_cause()</code> o'qiladi, <code>boot</code> hodisasida <code>sabab: tok|wdt</code> (xotiraga ham yig'iladi, MES ga yetadi); <code>HOLAT</code> da <code>sabab</code>, <code>up</code>. Stansiya <code>pico holat:0</code> ga uzilish turini (<code>usb_xato|jim|...</code>) qo'shadi. Sabab: 2026-09-24 da Pico ishlab turib qorovul (WDT) bilan qayta yuklangani aniqlandi. Pin va mantiq o'zgarmadi</td></tr>
 <tr><td class="m">v1.20</td><td><b>Ovoz Pico dan olib tashlandi</b> (GP16 PWM yo'q, oyoq doim past) — tovushni MES tomoni chaladi. Lampa almashganda <code>sig</code> hodisasi: ovoz bilan chiroq fazasi siljimaydi (5.1). <code>HQ/HA/AV</code> Pico da faqat saqlanadi</td></tr>
 <tr><td class="m">v1.19</td><td>Navbat sig'imi eng kichik detal (150 mm) bo'yicha hisoblanadi; juftlash chegarasi 25% → 3%; tezlik almashgan detallar solishtirilmaydi</td></tr>

@@ -421,7 +421,7 @@ def S29():
         M.XOST['oxir'] = None
     bosh = [j for j in js if j['ev'] == 'yigilgan']
     olch = [j for j in js if j['ev'] == 'olchov']
-    tekshir('29 stansiyasiz: o\'lchov xotiraga, HB da eski_ms bilan chiqadi', not jim and n_xot >= 2 and bosh and len(olch) == 1 and abs(olch[0]['L'] - 600) < 2 and olch[0]['eski_ms'] >= 10000 and not M.yigilgan, js)
+    tekshir('29 stansiyasiz: o\'lchov xotiraga, HB da eski_ms bilan chiqadi', not jim and n_xot >= 2 and bosh and len(olch) == 1 and abs(olch[0]['L'] - 600) < 2 and olch[0]['eski_ms'] >= 10000 and len(M.yigilgan) == n_xot, js)   # v1.22: ACK gacha o'chmaydi
 
 def _siglar():
     return [e for e in CHIQ if e['ev'] == 'sig']
@@ -686,6 +686,58 @@ def S41():
             sabab == ['tok', 'wdt', '5', '?'] and n_xot == 1 and boot and boot[0]['sabab'] == 'wdt'
             and 'eski_ms' in boot[0] and hol and 'sabab' in hol[0] and 'up' in hol[0]
             and hol[0]['ver'] == M.VER, [sabab, js])
+
+def S42():
+    # v1.22: tasdiq bilan yetkazish. Kompyuter uyg'onayotganda Pico xotirani chiqardi,
+    # lekin stansiya o'qimadi (2026-09-24, ~100 o'lchov yo'qoldi). Endi: ACK kelmaguncha
+    # yozuv xotirada, QAYTA_MS dan keyin qayta chiqadi; boshqa xb dagi ACK e'tiborsiz;
+    # stansiya bor paytdagi jonli yozuv ham ACK gacha saqlanadi.
+    import builtins as B
+    l = yangi_holat(); M.yubor = ASL_YUBOR
+    M.yigilgan.clear(); M.XOST.update({'oxir': None, 'yoqolgan': 0})
+    chiq = []; asl = B.print
+    B.print = lambda *a, **k: chiq.append(' '.join(str(x) for x in a))
+    kirit = []; hb = {'on': False, 't': 0}
+    class Kirish:
+        def readline(self):
+            if kirit:
+                return kirit.pop(0) + '\n'
+            if hb['on'] and SOAT['us'] - hb['t'] >= 1_000_000:
+                hb['t'] = SOAT['us']; return 'HB\n'
+            return ''
+    asl_poll, asl_stdin, asl_b = M.poll, M.sys.stdin, M.buyruq_tekshir
+    M.poll = type('P', (), {'poll': lambda s, t=0: [1]})(); M.sys.stdin = Kirish(); M.buyruq_tekshir = ASL_BUYRUQ
+    def xq_lar():
+        return [json.loads(s) for s in chiq if s.startswith('{') and '"xq"' in s]
+    def ack(xb, ev):
+        kirit.append('ACK %s %s' % (xb, ' '.join(str(e['xq']) for e in ev))); l.yur(50)
+    try:
+        l.run = True; l.pin_run(); l.yur(300)
+        l.qoy(600); l.yur(25000)                       # stansiya yo'q — uskuna + olchov xotirada
+        n1 = len(M.yigilgan)
+        hb['on'] = True; l.yur(2000)                   # stansiya qaytdi, lekin ACK qilmadi (yo'qotdi)
+        birinchi = xq_lar()
+        chiq.clear(); l.yur(2500); erta = xq_lar()     # < QAYTA_MS — qayta yuborilmaydi
+        l.yur(1500); qayta = xq_lar()                  # > QAYTA_MS — qayta
+        ack('ffffffff', qayta); n_begona = len(M.yigilgan)
+        ack(M.XB, qayta); n_ack = len(M.yigilgan)
+        chiq.clear(); l.yur(6000); keyin = xq_lar()
+        chiq.clear(); l.qoy(700); l.yur(25000)          # stansiya bor — jonli o'lchov
+        jonli = [e for e in xq_lar() if e['ev'] == 'olchov']
+        n_jonli = len(M.yigilgan)
+        ack(M.XB, jonli[:1]); n_oxir = len(M.yigilgan)
+    finally:
+        B.print = asl; M.yubor = lambda d: CHIQ.append(json.loads(json.dumps(d)))
+        M.poll, M.sys.stdin, M.buyruq_tekshir = asl_poll, asl_stdin, asl_b
+        M.XOST['oxir'] = None; M.yigilgan.clear()
+    xq = lambda ev: sorted(e['xq'] for e in ev)
+    tekshir('42 ACK: tasdiqsiz yozuv qayta keladi, begona xb e\'tiborsiz, ACK dan keyin o\'chadi, jonli ham saqlanadi',
+            n1 == 2 and len(birinchi) == 2 and all('eski_ms' in e for e in birinchi) and not erta
+            and xq(qayta) == xq(birinchi) and n_begona == 2 and n_ack == 0 and not keyin
+            and jonli and 'eski_ms' not in jonli[0] and jonli[0]['xb'] == M.XB
+            and any('eski_ms' in e and e['xq'] == jonli[0]['xq'] for e in jonli[1:])
+            and n_jonli == 1 and n_oxir == 0,
+            [n1, birinchi, erta, qayta, n_begona, n_ack, keyin, jonli, n_jonli, n_oxir])
 
 def yetib_bor_oxirgi(l, x, ms_max=120000):
     """Oxirgi qo'yilgan detal old qirrasi x ga yetguncha yurgizish."""
